@@ -18,6 +18,5 @@ setup(name='autoc',
       keywords=['cleaning', 'preprocessing', 'pandas'],
       install_requires=[
           'numpy>=1.7.0',
-          'pandas>=0.15.0',
-          'scikit-learn>=0.14']
+          'pandas>=0.15.0']
       )
