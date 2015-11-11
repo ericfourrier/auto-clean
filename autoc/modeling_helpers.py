@@ -28,9 +28,27 @@ class DataExploration(object):
     number of missing values, number of unique values, constant columns,
     long strings ...
 
-    """
+    For the most useful methods it will store the result into a attributes
+
+    When you used a method the output will be stored in a instance attribute so you
+    don't have to compute the result again.
+
+	"""
 
     def __init__(self, data):
+		"""
+	    Parameters
+	    ----------
+	    data : DataFrame
+	            the data you want explore
+
+	    Examples
+	    --------
+	    explorer = DataExploration(data = your_DataFrame)
+	    explorer.structure() : global structure of your DataFrame
+	    explorer.psummary() to get the a global snapchat of the different stuff detected
+	    data_cleaned = explorer.basic_cleaning() to clean your data.
+		"""
         assert isinstance(data, pd.DataFrame)
         self.data = data
         # if not self.label:
