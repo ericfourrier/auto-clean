@@ -33,22 +33,22 @@ class DataExploration(object):
     When you used a method the output will be stored in a instance attribute so you
     don't have to compute the result again.
 
-	"""
+        """
 
     def __init__(self, data):
-		"""
-	    Parameters
-	    ----------
-	    data : DataFrame
-	            the data you want explore
+        """
+        Parameters
+        ----------
+        data : DataFrame
+                the data you want explore
 
-	    Examples
-	    --------
-	    explorer = DataExploration(data = your_DataFrame)
-	    explorer.structure() : global structure of your DataFrame
-	    explorer.psummary() to get the a global snapchat of the different stuff detected
-	    data_cleaned = explorer.basic_cleaning() to clean your data.
-		"""
+        Examples
+        --------
+        explorer = DataExploration(data = your_DataFrame)
+        explorer.structure() : global structure of your DataFrame
+        explorer.psummary() to get the a global snapchat of the different stuff detected
+        data_cleaned = explorer.basic_cleaning() to clean your data.
+        """
         assert isinstance(data, pd.DataFrame)
         self.data = data
         # if not self.label:
@@ -172,9 +172,14 @@ class DataExploration(object):
             **kwargs).apply(lambda x: len(x.unique()) == 1, axis=0)
         if len(cserie(col_to_keep)) == 0:
             return []
-        self._constantcol = list(cserie(self.data.loc[:, col_to_keep].apply(
-            lambda x: len(x.unique()) == 1, axis=0)))
+        self._constantcol = cserie(self.data.loc[:, col_to_keep].apply(
+            lambda x: len(x.unique()) == 1, axis=0))
         return self._constantcol
+
+        def constantcol2(self, **kwargs):
+            """ identify constant columns """
+            # sample to reduce computation time
+            return cserie((self.data == self.data.ix[0]).all())
 
     def factors(self, nb_max_levels=10, threshold_value=None, index=False):
         """ return a list of the detected factor variable, detection is based on
@@ -210,9 +215,9 @@ class DataExploration(object):
                 return True
 
         if index:
-            return self.data.apply(lambda x:  helper_factor(x))
+            return self.data.apply(lambda x: helper_factor(x))
         else:
-            return cserie(self.data.apply(lambda x:  helper_factor(x)))
+            return cserie(self.data.apply(lambda x: helper_factor(x)))
 
     def structure(self, threshold_factor=10):
         """ this function return a summary of the structure of the pandas DataFrame
@@ -236,10 +241,10 @@ class DataExploration(object):
         # is_key_na = ((nb_unique_values + nb_missing) == self.nrow()) & (~na_columns)
         dict_str = {'dtypes_r': dtypes_r, 'perc_missing': perc_missing,
                     'nb_missing': nb_missing, 'is_key': is_key,
-                    'nb_unique_values': nb_unique_values, 'dtypes': dtypes,
+                    'nb_unique_values': nb_unique_values, 'dtypes_p': dtypes,
                     'constant_columns': constant_columns, 'na_columns': na_columns}
         self._structure = pd.concat(dict_str, axis=1)
-        self._structure = self._structure.loc[:, ['dtypes', 'dtypes_r', 'nb_missing', 'perc_missing',
+        self._structure = self._structure.loc[:, ['dtypes_p', 'dtypes_r', 'nb_missing', 'perc_missing',
                                                   'nb_unique_values', 'constant_columns', 'na_columns', 'is_key']]
         return self._structure
 
