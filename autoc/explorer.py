@@ -176,10 +176,9 @@ class DataExploration(object):
             lambda x: len(x.unique()) == 1, axis=0))
         return self._constantcol
 
-        def constantcol2(self, **kwargs):
-            """ identify constant columns """
-            # sample to reduce computation time
-            return cserie((self.data == self.data.ix[0]).all())
+    def constantcol2(self, **kwargs):
+        """ identify constant columns """
+        return cserie((self.data == self.data.ix[0]).all())
 
     def factors(self, nb_max_levels=10, threshold_value=None, index=False):
         """ return a list of the detected factor variable, detection is based on
