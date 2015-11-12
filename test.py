@@ -16,7 +16,7 @@ The clock decorator in utils will measure the run time of the test
 import unittest
 # internal helpers
 from autoc.utils.helpers import clock, create_test_df, removena_numpy
-from autoc.modeling_helpers import DataExploration
+from autoc.explorer import DataExploration
 import pandas as pd
 import numpy as np
 
