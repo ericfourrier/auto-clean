@@ -15,7 +15,9 @@ The Goal of this module is to rely on a dataframe structure for modelling g
 
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from numpy.random import permutation
+
 
 
 def cserie(serie):
@@ -80,6 +82,19 @@ class DataExploration(object):
     # 		print("""the label column is empty the data will be considered
     # 			as a dataset of predictors""")
     # 	return self.data[self.label]
+
+    @staticmethod
+    def plot_corrmatrix(df, square=True, linewidths=0.1, annot=True,
+                        size=None, *args, **kwargs):
+        """
+        Plot correlation matrix of the dataset
+        see doc at https://stanford.edu/~mwaskom/software/seaborn/generated/seaborn.heatmap.html#seaborn.heatmap
+
+        """
+        corr_matrix = df.corr()
+        sns.heatmap(corr_matrix, vmin=corr_matrix.values.min(), vmax=1,
+                    square=square, linewidths=linewidths, annot=annot,
+                    annot_kws={"size": size}, *args, **kwargs)
 
     def count_unique(self):
         """ Return a serie with the number of unique value per columns """
