@@ -63,6 +63,10 @@ class TestDataExploration(unittest.TestCase):
         self.assertEqual(self._test_dc._ncol, self._test_dc.data.shape[1])
 
     @clock
+    def test_total_missing(self):
+        self.assertEqual(self._test_dc.total_missing, self._test_dc.data.isnull().sum().sum())
+
+    @clock
     def test_nacolcount_capture_na(self):
         nacolcount = self._test_dc.nacolcount()
         self.assertEqual(nacolcount.loc['na_col', 'Napercentage'], 1.0)

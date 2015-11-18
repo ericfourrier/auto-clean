@@ -18,7 +18,6 @@ import numpy as np
 from numpy.random import permutation
 
 
-
 def cserie(serie):
     return serie[serie].index.tolist()
 
@@ -95,6 +94,11 @@ class DataExploration(object):
         if threshold:
             a = min(a, threshold)
         return self.data.loc[permutation(self.data.index)[:a]]
+
+    @property
+    def total_missing(self):
+        """ Count the total number of missing values """
+        return np.count_nonzero(self.data.isnull().values)  # optimized for speed
 
     def nacolcount(self):
         """ count the number of missing values per columns """
