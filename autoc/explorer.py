@@ -223,6 +223,41 @@ class DataExploration(object):
         else:
             return cserie(self.data.apply(lambda x: helper_factor(x)))
 
+    @staticmethod
+    def serie_quantiles(array, nb_quantiles=10):
+        binq = 1.0 / nb_quantiles
+        if type(array) == pd.Series:
+            return array.quantile([binq * i for i in xrange(nb_quantiles + 1)])
+        elif type(array) == np.ndarray:
+            return np.percentile(array, [binq * i for i in xrange(nb_quantiles + 1)])
+        else:
+            raise("the type of your array is not supported")
+
+    def dfquantiles(self, nb_quantiles=10, only_numeric=True):
+        """ this function gives you a all the quantiles
+        of the numeric variables of the dataframe
+        only_numeric will calculate it only for numeric variables,
+        for only_numeric = False you will get NaN value for non numeric
+        variables """
+        binq = 1.0 / nb_quantiles
+        if only_numeric:
+            return self.data.loc[:,self._dfnumi].quantile([binq * i for i in xrange(nb_quantiles + 1)])
+        else:
+            return self.data.quantile([binq * i for i in xrange(nb_quantiles + 1)])
+
+    def detailled_summary(self):
+        """ provide a more complete sumary than describe, it is using only numeric
+        value """
+        df = self.data.loc[:,self._dfnumi]
+        func_list = [df.count(), df.min(), df.quantile(0.25),
+                     df.quantile(0.5), df.mean(),
+                     df.std(), df.mad(), df.skew(),
+                     df.kurt(), df.quantile(0.75), df.max()]
+        results = [f for f in func_list]
+        return pd.DataFrame(results, index=['Count', 'Min', 'FirstQuartile',
+                                            'Median', 'Mean', 'Std', 'Mad', 'Skewness',
+                                            'Kurtosis', 'Thirdquartile', 'Max']).T
+
     def structure(self, threshold_factor=10):
         """ this function return a summary of the structure of the pandas DataFrame
         data looking at the type of variables, the number of missing values, the
