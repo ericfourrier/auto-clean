@@ -12,6 +12,10 @@ import pandas as pd
 import numpy as np
 
 
+def cserie(serie):
+    return serie[serie].index.tolist()
+
+
 def removena_numpy(array):
     return array[~(np.isnan(array))]
 
@@ -84,6 +88,50 @@ def create_test_df():
     test_df['outlier'] = normal(size=1000)
     test_df.loc[[1, 10, 100], 'outlier'] = [10, 5, 10]
     return test_df
+
+
+def simu(pmf, size):
+    """ Draw one sample from of a discrete distribution, pmf is supposed to
+    be in ascending order
+
+    Parameters
+    ----------
+    pmf : tuple(ndarray, ndarray)
+        a tuple with (labels,probs) labels are supposed to be in ascending order
+    size: int
+        the number of sampel you want generate
+    Return
+    ------
+    int (depends of the type of labels)
+        draw a random sample from the pmf
+    """
+    labels, probs = pmf[0], pmf[1]
+    u = np.random.rand(size)
+    cumulative_sum = probs.cumsum()
+    return labels[(u >= cumulative_sum[:, None]).argmin(axis=0)]
+
+
+def random_pmf(nb_labels):
+    """ Return a random probability mass function of nb_labels"""
+    random_numbers = np.random.random(nb_labels)
+    return random_numbers / np.sum(random_numbers)
+
+
+def random_histogram(nb_labels, nb_observations):
+    """ Return a random probability mass function of nb_labels"""
+    random_histo = np.random.choice(np.arange(0, nb_observations), nb_labels)
+    return random_histo / np.sum(random_histo)
+
+
+def simulate_na_col(df, colname, pct, weights=None, random_weights=True):
+    """ Simulate missing values in a column of categorical variables """
+    # if df.loc[:,colname].dtype == 'float' or df.loc[:,colname].dtype == 'int':
+    #     raise TypeError('This function only support categorical variables')
+    pmf = df.loc[:, column].value_counts(normalize=True)
+    labels = pmf.index.values  # characters
+    pmf_na = weights if weights else random_pmf(len(labels))
+    na_simu = simu((labels, pmf.values), int(pct*len(df.index)))
+    return na_simu
 
 
 def get_test_df_complete():
