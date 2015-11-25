@@ -15,15 +15,16 @@ The clock decorator in utils will measure the run time of the test
 
 import unittest
 # internal helpers
-from autoc.utils.helpers import clock, create_test_df, removena_numpy
+from autoc.utils.helpers import clock, create_test_df, removena_numpy, cserie
 from autoc.explorer import DataExploration
+from autoc.naimputer import NaImputer
 import pandas as pd
 import numpy as np
 
 
 flatten_list = lambda x: [y for l in x for y in flatten_list(
     l)] if isinstance(x, list) else [x]
-cserie = lambda serie: list(serie[serie].index)
+
 
 # flatten_list = lambda x: [y for l in x for y in flatten_list(l)] if isinstance(x,list) else [x]
 #########################################################
@@ -64,7 +65,8 @@ class TestDataExploration(unittest.TestCase):
 
     @clock
     def test_total_missing(self):
-        self.assertEqual(self._test_dc.total_missing, self._test_dc.data.isnull().sum().sum())
+        self.assertEqual(self._test_dc.total_missing,
+                         self._test_dc.data.isnull().sum().sum())
 
     @clock
     def test_nacolcount_capture_na(self):
@@ -183,6 +185,61 @@ class TestDataExploration(unittest.TestCase):
         self.assertIn('nearzerovar_variable', cserie(nearzerovar.nzv))
         self.assertIn('constant_col', cserie(nearzerovar.nzv))
         self.assertIn('na_col', cserie(nearzerovar.nzv))
+
+
+class TestNaImputer(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """ creating test data set for the test module """
+        cls._test_na = NaImputer(data=create_test_df())
+
+    @clock
+    def test_fillna_serie(self):
+        test_serie = pd.Series([1, 3, np.nan, 5])
+        self.assertIsInstance(
+            self._test_na.fillna_serie(test_serie), pd.Series)
+        self.assertEqual(self._test_na.fillna_serie(test_serie)[2], 3.0)
+
+    @clock
+    def test_fillna_serie(self):
+        test_char_variable = self._test_na.fillna_serie(
+            self._test_na.data.character_variable_fillna)
+        test_num_variable = self._test_na.fillna_serie(
+            self._test_na.data.numeric_variable_fillna)
+        self.assertTrue(test_char_variable.notnull().any())
+        self.assertTrue(test_num_variable.notnull().any())
+        self.assertTrue((pd.Series(
+            ['A'] * 300 + ['B'] * 200 + ['C'] * 200 + ['A'] * 300) == test_char_variable).all())
+        self.assertTrue(
+            (pd.Series([1] * 400 + [3] * 400 + [2] * 200) == test_num_variable).all())
+
+    @clock
+    def test_fill_low_na(self):
+        df_fill_low_na = self._test_na.basic_naimputation(columns_to_process=['character_variable_fillna',
+                                                                       'numeric_variable_fillna'])
+        df_fill_low_na_threshold = self._test_na.basic_naimputation(threshold=0.4)
+        self.assertIsInstance(df_fill_low_na, pd.DataFrame)
+        self.assertIsInstance(df_fill_low_na_threshold, pd.DataFrame)
+        self.assertTrue((pd.Series(['A'] * 300 + ['B'] * 200 + ['C'] * 200 + [
+                        'A'] * 300) == df_fill_low_na.character_variable_fillna).all())
+        self.assertTrue((pd.Series([1] * 400 + [3] * 400 + [2] * 200)
+                         == df_fill_low_na.numeric_variable_fillna).all())
+        self.assertTrue((pd.Series(['A'] * 300 + ['B'] * 200 + ['C'] * 200 + [
+                        'A'] * 300) == df_fill_low_na_threshold.character_variable_fillna).all())
+        self.assertTrue((pd.Series([1] * 400 + [3] * 400 + [2] * 200)
+                         == df_fill_low_na_threshold.numeric_variable_fillna).all())
+        self.assertTrue(
+            sum(pd.isnull(df_fill_low_na_threshold.many_missing_70)) == 700)
+
+
+class TestHelper(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """ creating test data set for the test module """
+        cls.data = create_test_df()
+
 
 
 # Adding new tests sets

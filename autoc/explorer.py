@@ -16,10 +16,8 @@ The Goal of this module is to rely on a dataframe structure for modelling g
 import pandas as pd
 import numpy as np
 from numpy.random import permutation
+from autoc.utils.helpers import cserie
 
-
-def cserie(serie):
-    return serie[serie].index.tolist()
 
 
 class DataExploration(object):
@@ -65,8 +63,6 @@ class DataExploration(object):
         self._narowcount = pd.DataFrame()
         self._count_unique = pd.DataFrame()
         self._constantcol = []
-        self._manymissingcol = []
-        self._manymissingrow = []
         self._dupcol = []
         self._nearzerovar = pd.DataFrame()
         self._corrcolumns = []
@@ -121,20 +117,38 @@ class DataExploration(object):
             'Nanumber'] / (self._nrow)
         return self._narowcount
 
-    def manymissing(self, a=0.9, row=False):
-        """ identify columns of a dataframe with many missing values ( >= a), if
+    # def manymissing2(self, pct=0.9, axis=0, index=False):
+    #     """ identify columns of a dataframe with many missing values ( >= a), if
+    #     row = True row either.
+    #     - the output is a index """
+    #     if axis == 1:
+    #         self.manymissing = self.narowcount()
+    #         self.manymissing = self.manymissing['Napercentage'] >= pct
+    #     elif axis == 0:
+    #         self.manymissing = self.nacolcount()
+    #         self.manymissing = self.manymissing['Napercentage'] >= pct
+    #     else:
+    #         raise ValueError
+    #     if index:
+    #         return manymissing
+    #     else:
+    #         return cserie(manymissing)
+
+    def manymissing(self, pct=0.9, axis=0):
+        """ identify columns of a dataframe with many missing values ( >= pct), if
         row = True row either.
         - the output is a list """
-        if row:
+        if axis == 1:
             self._manymissingrow = self.narowcount()
-            self._manymissingrow = cserie(
-                self._manymissingrow['Napercentage'] >= a)
+            self._manymissingrow = self._manymissingrow['Napercentage'] >= pct
             return self._manymissingrow
-        else:
+        elif axis == 0:
             self._manymissingcol = self.nacolcount()
             self._manymissingcol = cserie(
-                self._manymissingcol['Napercentage'] >= a)
+                self._manymissingcol['Napercentage'] >= pct)
             return self._manymissingcol
+        else:
+            raise ValueError("Axis should be 1 for rows and o for columns")
 
     def df_len_string(self):
         """ Return a Series with the max of the length of the string of string-type columns """
@@ -241,14 +255,14 @@ class DataExploration(object):
         variables """
         binq = 1.0 / nb_quantiles
         if only_numeric:
-            return self.data.loc[:,self._dfnumi].quantile([binq * i for i in xrange(nb_quantiles + 1)])
+            return self.data.loc[:, self._dfnumi].quantile([binq * i for i in xrange(nb_quantiles + 1)])
         else:
             return self.data.quantile([binq * i for i in xrange(nb_quantiles + 1)])
 
     def detailled_summary(self):
         """ provide a more complete sumary than describe, it is using only numeric
         value """
-        df = self.data.loc[:,self._dfnumi]
+        df = self.data.loc[:, self._dfnumi]
         func_list = [df.count(), df.min(), df.quantile(0.25),
                      df.quantile(0.5), df.mean(),
                      df.std(), df.mad(), df.skew(),
