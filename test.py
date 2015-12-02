@@ -15,7 +15,8 @@ The clock decorator in utils will measure the run time of the test
 
 import unittest
 # internal helpers
-from autoc.utils.helpers import clock, create_test_df, removena_numpy, cserie
+# from autoc.utils.helpers import clock, create_test_df, removena_numpy, cserie
+from autoc.utils.helpers import *
 from autoc.explorer import DataExploration
 from autoc.naimputer import NaImputer
 import pandas as pd
@@ -239,6 +240,15 @@ class TestHelper(unittest.TestCase):
     def setUpClass(cls):
         """ creating test data set for the test module """
         cls.data = create_test_df()
+
+    def test_random_pmf(self):
+        self.assertEqual(len(random_pmf(10)), 10)
+        self.assertEqual(random_pmf(10).sum(), 1)
+
+    def test_simu(self):
+        pmf = random_pmf(4)
+        samples_unique = simu((np.array(['A', 'B']), np.array([0, 1])), 10)
+        self.assertTrue((samples_unique == 'B').all())
 
 
 
