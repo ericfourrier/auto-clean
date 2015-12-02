@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def readme():
@@ -13,7 +13,7 @@ setup(name='autoc',
       author_email='ericfourrier0@gmail.com',
       license='MIT',
       url='https://github.com/ericfourrier/auto-cl',
-      packages=['autoc'],
+      packages=find_packages(),
       test_suite='test',
       keywords=['cleaning', 'preprocessing', 'pandas'],
       install_requires=[
