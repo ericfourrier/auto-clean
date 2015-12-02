@@ -111,6 +111,12 @@ def simu(pmf, size):
     return labels[(u >= cumulative_sum[:, None]).argmin(axis=0)]
 
 
+def shuffle_df(df, reindex=False):
+    new_df = df.sample(frac=1) if not reindex else df.sample(
+        frac=1).reset_index()
+    return new_df
+
+
 def random_pmf(nb_labels):
     """ Return a random probability mass function of nb_labels"""
     random_numbers = np.random.random(nb_labels)
@@ -123,15 +129,27 @@ def random_histogram(nb_labels, nb_observations):
     return random_histo / np.sum(random_histo)
 
 
-def simulate_na_col(df, colname, pct, weights=None, random_weights=True):
+def simulate_na_col(df, colname, n=None, pct=None, weights=None):
     """ Simulate missing values in a column of categorical variables """
     # if df.loc[:,colname].dtype == 'float' or df.loc[:,colname].dtype == 'int':
-    #     raise TypeError('This function only support categorical variables')
-    pmf = df.loc[:, column].value_counts(normalize=True)
-    labels = pmf.index.values  # characters
-    pmf_na = weights if weights else random_pmf(len(labels))
-    na_simu = simu((labels, pmf.values), int(pct*len(df.index)))
-    return na_simu
+    #     raise ValueError('This function only support categorical variables')
+    if (n is not None) and (pct is not None):
+            n = int(pct * df.shape[0]) # be careful here especially if cols has a lot of missinf values
+    if isinstance(colname, pd.core.index.Index) or isinstance(colname, list):
+        for c in colname:
+            simulate_na_col(df, colname=c, n=n, pct=pct, weights=weights)
+    else:
+        col = df.loc[:, colname].dropna()
+        col_distribution = col.value_counts(normalize=True, sort=False)
+        labels = col_distribution.index  # characters
+        # generate random pmf
+        pmf_na = weights if weights else random_pmf(len(labels))
+        na_distribution = pd.Series(data=pmf_na, index=labels)
+        # draw samples from this pmf
+        weights_na = col.apply(lambda x: na_distribution[x])
+        weights_na /= weights_na.sum()
+        index_to_replace = col.sample(n=n, weights=weights_na).index
+        df.loc[index_to_replace, colname] = np.nan
 
 
 def get_test_df_complete():
@@ -139,10 +157,10 @@ def get_test_df_complete():
     the purpose of this fuction is to be used in a demo ipython notebook """
     import requests
     from zipfile import ZipFile
-    from io import StringIO
-    zip_to_download = "https://resources.lendingclub.com / LoanStats3b.csv.zip"
+    import StringIO
+    zip_to_download = "https://resources.lendingclub.com/LoanStats3b.csv.zip"
     r = requests.get(zip_to_download)
-    zipfile = ZipFile(StringIO(r.content))
+    zipfile = ZipFile(StringIO.StringIO(r.content))
     file_csv = zipfile.namelist()[0]
     # we are using the c parser for speed
     df = pd.read_csv(zipfile.open(file_csv), skiprows=[0], na_values=['n/a', 'N/A', ''],
@@ -161,7 +179,31 @@ def get_test_df_complete():
     df.loc[index_good, 'bad'] = 0
     return df
 
+def kl(p, q):
+    """
+    Kullback-Leibler divergence for discrete distributions
 
+    Parameters
+    ----------
+    p: ndarray
+        probability mass function
+    q: ndarray
+        probability mass function
+
+    Returns
+    --------
+    float : D(P || Q) = sum(p(i) * log(p(i)/q(i))
+    Discrete probability distributions.
+
+    """
+    return np.sum(np.where(p != 0, p * np.log(p / q), 0))
+
+def kl_series(serie1, serie2, dropna=True):
+    if dropna:
+        serie1 = serie1.dropna()
+        serie2 = serie2.dropna()
+    return kl(serie1.value_counts(normalize=True).values,
+             serie2.value_counts(normalize=True).values)
 def psi(bench, target, group, print_df=True):
     """ This function return the Population Stability Index, quantifying if the
     distribution is stable between two states.
