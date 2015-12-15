@@ -259,7 +259,7 @@ class DataExploration(object):
         else:
             return self.data.quantile([binq * i for i in xrange(nb_quantiles + 1)])
 
-    def detailled_summary(self):
+    def numeric_summary(self):
         """ provide a more complete sumary than describe, it is using only numeric
         value """
         df = self.data.loc[:, self._dfnumi]
