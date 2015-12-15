@@ -479,3 +479,14 @@ class DataExploration(object):
 		these columns contains big strings :\n{big_strings_col}\n
 				""".format(**self._dict_info)
             print(self._string_info)
+
+    def metadata(self):
+        """ Return a dict/json full of infos about the dataset """
+        meta = {}
+        meta['columns_name'] = self.data.columns
+        meta['columns_name_n'] = [e.lower() for e in self.data.columns]
+        meta['nb_rows'] = self.data.shape[0]
+        meta['nb_columns'] = self.data.shape[1]
+        meta['structure'] = self.structure()
+        meta['numeric_summary'] = self.numeric_summary()
+        return meta
