@@ -242,8 +242,8 @@ class TestHelper(unittest.TestCase):
         cls.data = create_test_df()
 
     def test_random_pmf(self):
-        self.assertEqual(len(random_pmf(10)), 10)
-        self.assertEqual(random_pmf(10).sum(), 1)
+        self.assertAlmostEqual(len(random_pmf(10)), 10)
+        self.assertAlmostEqual(random_pmf(10).sum(), 1)
 
     def test_simu(self):
         pmf = random_pmf(4)
