@@ -12,6 +12,10 @@ import pandas as pd
 import numpy as np
 
 
+def flatten_list(x):
+    return [y for l in x for y in flatten_list(l)] if isinstance(x, list) else [x]
+
+
 def cserie(serie):
     return serie[serie].index.tolist()
 
@@ -129,17 +133,55 @@ def random_histogram(nb_labels, nb_observations):
     return random_histo / np.sum(random_histo)
 
 
-def simulate_na_col(df, colname, n=None, pct=None, weights=None):
-    """ Simulate missing values in a column of categorical variables """
+def keep_category(df, colname, pct=0.05, n=5):
+    """ Keep a pct or number of every levels of a categorical variable
+
+    Parameters
+    ----------
+    pct : float
+        Keep at least pct of the nb of observations having a specific category
+    n : int
+        Keep at least n of the variables having a specific category
+
+    Returns
+    --------
+    Returns an index of rows to keep
+    """
+    tokeep = []
+    nmin = df.groupby(colname).apply(lambda x: x.sample(
+        max(1, min(x.shape[0], n, int(x.shape[0] * pct)))).index)
+    for index in nmin:
+        tokeep += index.tolist()
+    return pd.Index(tokeep)
+
+
+# for k, i in df.groupby(colname).groups:
+#     to_keep += np.random.choice(i, max(1, min(g.shape[0], n, int(g.shape[0] * pct))), replace=False)
+# return to_keep
+#
+
+
+def simulate_na_col(df, colname, n=None, pct=None, weights=None,
+                    safety=True, *args, **kwargs):
+    """ Simulate missing values in a column of categorical variables
+
+    Notes
+    -----
+    Fix issue with category variable"""
     # if df.loc[:,colname].dtype == 'float' or df.loc[:,colname].dtype == 'int':
     #     raise ValueError('This function only support categorical variables')
-    if (n is not None) and (pct is not None):
-            n = int(pct * df.shape[0]) # be careful here especially if cols has a lot of missinf values
+    if (n is None) and (pct is not None):
+        # be careful here especially if cols has a lot of missing values
+        n = int(pct * df.shape[0])
     if isinstance(colname, pd.core.index.Index) or isinstance(colname, list):
         for c in colname:
             simulate_na_col(df, colname=c, n=n, pct=pct, weights=weights)
     else:
-        col = df.loc[:, colname].dropna()
+        if safety:
+            tokeep = keep_category(df, colname, *args, **kwargs)
+        col = df.loc[:, colname].drop(tokeep)  # we are not smapling from tokeep
+        col = col.dropna()
+        print(colname)
         col_distribution = col.value_counts(normalize=True, sort=False)
         labels = col_distribution.index  # characters
         # generate random pmf
@@ -148,7 +190,8 @@ def simulate_na_col(df, colname, n=None, pct=None, weights=None):
         # draw samples from this pmf
         weights_na = col.apply(lambda x: na_distribution[x])
         weights_na /= weights_na.sum()
-        index_to_replace = col.sample(n=n, weights=weights_na).index
+        index_to_replace = col.sample(
+            n=n, weights=weights_na, replace=False).index
         df.loc[index_to_replace, colname] = np.nan
 
 
@@ -179,6 +222,7 @@ def get_test_df_complete():
     df.loc[index_good, 'bad'] = 0
     return df
 
+
 def kl(p, q):
     """
     Kullback-Leibler divergence for discrete distributions
@@ -198,12 +242,15 @@ def kl(p, q):
     """
     return np.sum(np.where(p != 0, p * np.log(p / q), 0))
 
+
 def kl_series(serie1, serie2, dropna=True):
     if dropna:
         serie1 = serie1.dropna()
         serie2 = serie2.dropna()
     return kl(serie1.value_counts(normalize=True).values,
-             serie2.value_counts(normalize=True).values)
+              serie2.value_counts(normalize=True).values)
+
+
 def psi(bench, target, group, print_df=True):
     """ This function return the Population Stability Index, quantifying if the
     distribution is stable between two states.
