@@ -3,6 +3,12 @@ python:
 - '2.7'
 - '3.3'
 - '3.4'
+
+before_install:
+  - sudo apt-get update -yq
+  - sudo sh -c "echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections"
+  - sudo apt-get install msttcorefonts -qq
+  
 install: pip install -r requirements.txt
 script: python -m unittest -v test
 notifications:
