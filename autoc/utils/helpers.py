@@ -10,6 +10,7 @@ from numpy.random import choice
 import time
 import pandas as pd
 import numpy as np
+import functools
 
 
 def flatten_list(x):
@@ -65,6 +66,20 @@ def clock(func):
         print('elapsed : [{0:0.3f}ms]'.format(elapsed))
         return result
     return clocked
+
+def cached_property(fun):
+    """A memoize decorator for class properties."""
+    @functools.wraps(fun)
+    def get(self):
+        try:
+            return self._cache[fun]
+        except AttributeError:
+            self._cache = {}
+        except KeyError:
+            pass
+        ret = self._cache[fun] = fun(self)
+        return ret
+    return property(get)
 
 
 def create_test_df():
@@ -249,6 +264,14 @@ def kl_series(serie1, serie2, dropna=True):
         serie2 = serie2.dropna()
     return kl(serie1.value_counts(normalize=True).values,
               serie2.value_counts(normalize=True).values)
+
+
+def plot_hist_na(df, colname):
+    df_h = df.copy()
+    na_name = "is_na_{}".format(colname)
+    df_h[na_name] = df_h[colname].isnull().astype(int)
+    measure_col = cserie((df.dtypes == int) | (df.dtypes == float))
+    df_h.groupby(na_name)[measure_col].hist()
 
 
 def psi(bench, target, group, print_df=True):
