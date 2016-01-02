@@ -18,5 +18,6 @@ setup(name='autoc',
       keywords=['cleaning', 'preprocessing', 'pandas'],
       install_requires=[
           'numpy>=1.7.0',
-          'pandas>=0.15.0']
+          'pandas>=0.15.0',
+          'seaborn>=0.5']
       )
