@@ -1,10 +1,37 @@
 from autoc.explorer import DataExploration
 from autoc.utils.helpers import cserie
+import seaborn as sns
+import  matplotlib.pyplot as plt
+
+
+def missing_map(df, nmax=100, verbose=True, yticklabels=False, figsize=(15, 11), *args, **kwargs):
+    """ Returns missing map plot like in amelia 2 package in R """
+    f, ax = plt.subplots(figsize=figsize)
+    if nmax < df.shape[0]:
+        df_s = df.sample(n=nmax)  # sample rows if dataframe too big
+    return sns.heatmap(df_s.isnull(), yticklabels=yticklabels, vmax=1, *args, **kwargs)
 
 class NaImputer(DataExploration):
 
     def __init__(self, *args, **kwargs):
         super(NaImputer, self).__init__(*args, **kwargs)
+        self.data_na = pd.DataFrame # data with is_na_col
+
+    def get_isna(self, col):
+        return self.data.loc[:, col].isnull().astype(int)
+
+    def get_isna_df(self, prefix="is_na_", subset=None):
+        """ Returns dataset with is_na columns from the a dataframe with missing values """
+        if subset is not None:
+            isna_df = self.data[subset].apply(lambda x: self.get_isna(x.name))
+        else:
+            isna_df = self.data.apply(lambda x: self.get_isna(x.name))
+        isna_df.columns = ["{}{}".format(prefix, c) for c in isna_df.columns]
+        return pd.concat((self.data,isna_df), axis = 1)
+
+    def isna_summary(self, col):
+        """ Returns summary from one col with describe """
+        return df_isna.groupby(col).describe()
 
     def delete_narows(self, pct, index=False):
         """ Delete rows with more na percentage than > perc in data
