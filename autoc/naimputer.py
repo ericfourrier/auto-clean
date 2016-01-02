@@ -24,7 +24,7 @@ class NaImputer(DataExploration):
         infos['narowcount'] = self.narowcount()
         infos['nb_total_na'] = self.total_missing
         infos['many_na_col'] = self.manymissing(pct=na_high)
-        infos['low_na_col'] = self.nacolcount().Napercentage < na_low
+        infos['low_na_col'] = cserie(self.nacolcount().Napercentage < na_low)
         infos['total_pct_na'] = self.nacolcount().Napercentage.mean()
         return infos
 
