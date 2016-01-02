@@ -3,7 +3,7 @@ from autoc.utils.helpers import cserie
 import seaborn as sns
 import matplotlib.pyplot as plt
 from autoc.utils.helpers import cached_property
-from autoc.utils.coorplot import plot_corrmatrix
+from autoc.utils.corrplot import plot_corrmatrix
 
 def missing_map(df, nmax=100, verbose=True, yticklabels=False, figsize=(15, 11), *args, **kwargs):
     """ Returns missing map plot like in amelia 2 package in R """
