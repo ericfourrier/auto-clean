@@ -258,12 +258,39 @@ def kl(p, q):
     return np.sum(np.where(p != 0, p * np.log(p / q), 0))
 
 
+def jsd(p, q):
+    """
+    Jensen-Shannon divergence for discrete distributions
+
+    Parameters
+    ----------
+  cf. kl above
+
+    Returns
+    --------
+    float : JSD(P || Q) = 1/2 *(kl(p || m) + kl(q || m)) where m = 1/2*(p+q)
+    Discrete probability distributions.
+
+    """
+    m=0.5*(p + q)
+    return  0.5*(kl(p, m) + kl(q, m))
+
+
 def kl_series(serie1, serie2, dropna=True):
     if dropna:
         serie1 = serie1.dropna()
         serie2 = serie2.dropna()
     return kl(serie1.value_counts(normalize=True).values,
               serie2.value_counts(normalize=True).values)
+
+
+def jsd_series(serie1, serie2, dropna=True):
+    if dropna:
+        serie1 = serie1.dropna()
+        serie2 = serie2.dropna()   
+    p=serie1.value_counts(normalize=True).values
+    q=serie2.value_counts(normalize=True).values 
+    return jsd(p, q)
 
 
 def plot_hist_na(df, colname):
