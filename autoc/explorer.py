@@ -272,6 +272,10 @@ class DataExploration(object):
                                             'Median', 'Mean', 'Std', 'Mad', 'Skewness',
                                             'Kurtosis', 'Thirdquartile', 'Max']).T
 
+    def infer_types(self):
+        """ this function will try to infer the type of the columns of data"""
+        return self.data.apply(lambda x: pd.lib.infer_dtype(x.values))
+
     def structure(self, threshold_factor=10):
         """ this function return a summary of the structure of the pandas DataFrame
         data looking at the type of variables, the number of missing values, the
@@ -284,6 +288,7 @@ class DataExploration(object):
         nb_missing = nacolcount.Nanumber
         perc_missing = nacolcount.Napercentage
         nb_unique_values = self.count_unique()
+        dtype_infer = self.infer_types()
         dtypes_r = self.data.apply(lambda x: "character")
         dtypes_r[self._dfnumi] = "numeric"
         dtypes_r[(dtypes_r == 'character') & (
@@ -295,10 +300,12 @@ class DataExploration(object):
         dict_str = {'dtypes_r': dtypes_r, 'perc_missing': perc_missing,
                     'nb_missing': nb_missing, 'is_key': is_key,
                     'nb_unique_values': nb_unique_values, 'dtypes_p': dtypes,
-                    'constant_columns': constant_columns, 'na_columns': na_columns}
+                    'constant_columns': constant_columns, 'na_columns': na_columns,
+                    'dtype_infer': dtype_infer}
         self._structure = pd.concat(dict_str, axis=1)
         self._structure = self._structure.loc[:, ['dtypes_p', 'dtypes_r', 'nb_missing', 'perc_missing',
-                                                  'nb_unique_values', 'constant_columns', 'na_columns', 'is_key']]
+                                                  'nb_unique_values', 'constant_columns',
+                                                  'na_columns', 'is_key','dtype_infer']]
         return self._structure
 
     def findupcol(self, threshold=100, **kwargs):
@@ -483,10 +490,14 @@ class DataExploration(object):
     def metadata(self):
         """ Return a dict/json full of infos about the dataset """
         meta = {}
-        meta['columns_name'] = self.data.columns
+        meta['mem_size'] = self.data.memory_usage(index=True).sum() #in bytes
+        meta['columns_name'] = self.data.columns.tolist()
         meta['columns_name_n'] = [e.lower() for e in self.data.columns]
         meta['nb_rows'] = self.data.shape[0]
         meta['nb_columns'] = self.data.shape[1]
-        meta['structure'] = self.structure()
-        meta['numeric_summary'] = self.numeric_summary()
+        # drop dtype_p for mongodb compatibility
+        structure_data = self.structure().drop(labels='dtypes_p', axis=1)
+        structure_data = structure_data.to_dict('index')
+        meta['structure'] = structure_data
+        meta['numeric_summary'] = self.numeric_summary().to_dict('index')
         return meta
