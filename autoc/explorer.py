@@ -77,6 +77,23 @@ class DataExploration(object):
     # 			as a dataset of predictors""")
     # 	return self.data[self.label]
 
+
+
+    def is_numeric(self, colname):
+        """ Returns True if a the type of column is numeric else False
+
+        Notes
+        ------
+        df._get_numeric_data() is a primitive from pandas
+        to get only numeric data
+        """
+        dtype_col = self.data.loc[:, colname].dtype
+        return (dtype_col == int) or (dtype_col == float)
+
+    def where_numeric(self):
+        """ Returns a Boolean Dataframe with True for numeric values False for other """
+        return self.data.applymap(lambda x: isinstance(x, (int, float)))
+
     def count_unique(self):
         """ Return a serie with the number of unique value per columns """
         if len(self._count_unique):
