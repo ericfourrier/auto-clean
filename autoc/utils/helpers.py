@@ -13,6 +13,19 @@ import numpy as np
 import functools
 
 
+def get_dataset(name, *args, **kwargs):
+    """Get a dataset from the online repo
+    https://github.com/ericfourrier/autoc-datasets (requires internet).
+
+    Parameters
+    ----------
+    name : str
+        Name of the dataset 'name.csv'
+    """
+    path = "https://raw.githubusercontent.com/ericfourrier/autoc-datasets/master/{0}.csv".format(name)
+    return pd.read_csv(path, *args, **kwargs)
+
+
 def flatten_list(x):
     return [y for l in x for y in flatten_list(l)] if isinstance(x, list) else [x]
 
@@ -66,6 +79,7 @@ def clock(func):
         print('elapsed : [{0:0.3f}ms]'.format(elapsed))
         return result
     return clocked
+
 
 def cached_property(fun):
     """A memoize decorator for class properties."""
