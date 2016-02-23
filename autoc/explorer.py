@@ -131,8 +131,18 @@ class DataExploration(object):
         self._narowcount = pd.DataFrame(
             self._narowcount, columns=['Nanumber'])
         self._narowcount['Napercentage'] = self._narowcount[
-            'Nanumber'] / (self._nrow)
+            'Nanumber'] / (self._ncol)
         return self._narowcount
+
+    @property
+    def nacols_full(self):
+        """ Returns a list of columns with only missing values """
+        return cserie(self.nacolcount().Nanumber == self._nrow)
+
+    @property
+    def narows_full(self):
+        """ Returns an index of rows with only missing values """
+        return cserie(self.narowcount().Nanumber == self._ncol)
 
     # def manymissing2(self, pct=0.9, axis=0, index=False):
     #     """ identify columns of a dataframe with many missing values ( >= a), if

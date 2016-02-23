@@ -111,6 +111,19 @@ class TestDataExploration(unittest.TestCase):
         self.assertIn('na_col', manymissing)
 
     @clock
+    def test_nacols_full(self):
+        nacols_full = self._test_dc.nacols_full
+        self.assertIsInstance(nacols_full, list)
+        self.assertIn('na_col',nacols_full )
+
+    @clock
+    def test_narows_full(self):
+        test_df = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
+        test_df.loc[99, :] = np.nan
+        self.assertIn(99, DataExploration(test_df).narows_full)
+        self.assertNotIn(1, test_df)
+
+    @clock
     def test_constant_col_capture(self):
         constantcol = self._test_dc.constantcol()
         self.assertIsInstance(constantcol, list)
