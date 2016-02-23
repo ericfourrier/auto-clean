@@ -339,7 +339,7 @@ class DataExploration(object):
         """ find duplicated columns and return the result as a list of list """
         df_s = self.sample_df(threshold=100, **kwargs).T
         dup_index_s = (df_s.duplicated()) | (
-            df_s.duplicated(take_last=True))
+            df_s.duplicated(keep='last'))
 
         if len(cserie(dup_index_s)) == 0:
             return []
@@ -347,7 +347,7 @@ class DataExploration(object):
         df_t = (self.data.loc[:, dup_index_s]).T
         dup_index = df_t.duplicated()
         dup_index_complet = cserie(
-            (dup_index) | (df_t.duplicated(take_last=True)))
+            (dup_index) | (df_t.duplicated(keep='last')))
 
         l = []
         for col in cserie(dup_index):
@@ -368,10 +368,10 @@ class DataExploration(object):
         else:
             if subset:
                 dup_index = (self.data.duplicated(subset=subset)) | (
-                    self.data.duplicated(subset=subset, take_last=True))
+                    self.data.duplicated(subset=subset, keep='last'))
             else:
                 dup_index = (self.data.duplicated()) | (
-                    self.data.duplicated(take_last=True))
+                    self.data.duplicated(keep='last'))
 
             if subset:
                 return self.data[dup_index].sort(subset)
@@ -460,7 +460,7 @@ class DataExploration(object):
         infos = {'nb_duplicated_rows': {'value': self.data.duplicated().sum(), 'level': 'ERROR', 'action': 'delete'},
                  'dup_columns': {'value': self.findupcol(), 'level': 'ERROR', 'action': 'delete'},
                  'constant_columns': {'value': self.constantcol(), 'level': 'WARNING', 'action': 'delete'},
-                 'narows_full': {'value': self.narows_full, 'level': 'ERROR', 'action': 'delete'},
+                 'narows_full': {'value': cserie(self.narows_full), 'level': 'ERROR', 'action': 'delete'},
                  'nacols_full': {'value': self.nacols_full, 'level': 'ERROR', 'action': 'delete'}
                  }
         # update
