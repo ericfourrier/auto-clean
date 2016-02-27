@@ -17,7 +17,7 @@ import pandas as pd
 import numpy as np
 from numpy.random import permutation
 from autoc.utils.helpers import cserie
-
+from pprint import pprint
 
 
 class DataExploration(object):
@@ -77,6 +77,21 @@ class DataExploration(object):
     # 			as a dataset of predictors""")
     # 	return self.data[self.label]
 
+    def is_numeric(self, colname):
+        """ Returns True if a the type of column is numeric else False
+
+        Notes
+        ------
+        df._get_numeric_data() is a primitive from pandas
+        to get only numeric data
+        """
+        dtype_col = self.data.loc[:, colname].dtype
+        return (dtype_col == int) or (dtype_col == float)
+
+    def where_numeric(self):
+        """ Returns a Boolean Dataframe with True for numeric values False for other """
+        return self.data.applymap(lambda x: isinstance(x, (int, float)))
+
     def count_unique(self):
         """ Return a serie with the number of unique value per columns """
         if len(self._count_unique):
@@ -94,7 +109,9 @@ class DataExploration(object):
     @property
     def total_missing(self):
         """ Count the total number of missing values """
-        return np.count_nonzero(self.data.isnull().values)  # optimized for speed
+        # return np.count_nonzero(self.data.isnull().values)  # optimized for
+        # speed
+        return self.nacolcount().Nanumber.sum()
 
     def nacolcount(self):
         """ count the number of missing values per columns """
@@ -114,8 +131,18 @@ class DataExploration(object):
         self._narowcount = pd.DataFrame(
             self._narowcount, columns=['Nanumber'])
         self._narowcount['Napercentage'] = self._narowcount[
-            'Nanumber'] / (self._nrow)
+            'Nanumber'] / (self._ncol)
         return self._narowcount
+
+    @property
+    def nacols_full(self):
+        """ Returns a list of columns with only missing values """
+        return cserie(self.nacolcount().Nanumber == self._nrow)
+
+    @property
+    def narows_full(self):
+        """ Returns an index of rows with only missing values """
+        return self.narowcount().Nanumber == self._ncol
 
     # def manymissing2(self, pct=0.9, axis=0, index=False):
     #     """ identify columns of a dataframe with many missing values ( >= a), if
@@ -305,14 +332,14 @@ class DataExploration(object):
         self._structure = pd.concat(dict_str, axis=1)
         self._structure = self._structure.loc[:, ['dtypes_p', 'dtypes_r', 'nb_missing', 'perc_missing',
                                                   'nb_unique_values', 'constant_columns',
-                                                  'na_columns', 'is_key','dtype_infer']]
+                                                  'na_columns', 'is_key', 'dtype_infer']]
         return self._structure
 
     def findupcol(self, threshold=100, **kwargs):
         """ find duplicated columns and return the result as a list of list """
         df_s = self.sample_df(threshold=100, **kwargs).T
         dup_index_s = (df_s.duplicated()) | (
-            df_s.duplicated(take_last=True))
+            df_s.duplicated(keep='last'))
 
         if len(cserie(dup_index_s)) == 0:
             return []
@@ -320,7 +347,7 @@ class DataExploration(object):
         df_t = (self.data.loc[:, dup_index_s]).T
         dup_index = df_t.duplicated()
         dup_index_complet = cserie(
-            (dup_index) | (df_t.duplicated(take_last=True)))
+            (dup_index) | (df_t.duplicated(keep='last')))
 
         l = []
         for col in cserie(dup_index):
@@ -341,10 +368,10 @@ class DataExploration(object):
         else:
             if subset:
                 dup_index = (self.data.duplicated(subset=subset)) | (
-                    self.data.duplicated(subset=subset, take_last=True))
+                    self.data.duplicated(subset=subset, keep='last'))
             else:
                 dup_index = (self.data.duplicated()) | (
-                    self.data.duplicated(take_last=True))
+                    self.data.duplicated(keep='last'))
 
             if subset:
                 return self.data[dup_index].sort(subset)
@@ -427,6 +454,36 @@ class DataExploration(object):
             return res
             self._corrcolumns = res
 
+    def get_infos_consistency(self):
+        """ Update self._dict_info and returns infos about duplicates rows and cols,
+        constant col,narows and cols """
+        infos = {'nb_duplicated_rows': {'value': self.data.duplicated().sum(), 'level': 'ERROR', 'action': 'delete'},
+                 'dup_columns': {'value': self.findupcol(), 'level': 'ERROR', 'action': 'delete'},
+                 'constant_columns': {'value': self.constantcol(), 'level': 'WARNING', 'action': 'delete'},
+                 'narows_full': {'value': cserie(self.narows_full), 'level': 'ERROR', 'action': 'delete'},
+                 'nacols_full': {'value': self.nacols_full, 'level': 'ERROR', 'action': 'delete'}
+                 }
+        # update
+        self._dict_info.update(infos)
+        return infos
+
+    def get_infos_na(self, manymissing_ph=0.9,  manymissing_pl=0.05):
+        """ Update self._dict_info and returns infos about duplicates rows and cols,
+        constant col, narows and cols """
+        nacolcount_p = self.nacolcount().Napercentage
+        infos = {'nb_total_missing': {'value': self.total_missing, 'level': 'INFO', 'action': None},
+                 'pct_total_missing': {'value': float(self.total_missing) / self._nrow, 'level': 'INFO', 'action': None},
+                 'many_na_columns': {'value': cserie((nacolcount_p > manymissing_ph)), 'level': 'ERROR', 'action': 'delete or inpute'},
+                 'low_na_columns': {'value': cserie((nacolcount_p > 0) & (nacolcount_p <= manymissing_pl)), 'level': 'WARNING', 'action': 'inpute'},
+                 }
+        # update
+        self._dict_info.update(infos)
+        return infos
+
+    def print_infos(self, infos="consistency"):
+        if infos == "consistency":
+            pprint(self.get_infos_consistency())
+
     def psummary(self, manymissing_ph=0.70, manymissing_pl=0.05, nzv_freq_cut=95 / 5, nzv_unique_cut=10,
                  threshold=100, string_threshold=40, dynamic=False):
         """
@@ -460,7 +517,7 @@ class DataExploration(object):
             print('these columns contains big strings :\n{0}\n'.format(
                 cserie(self.df_len_string() > string_threshold)))
         else:
-            self._dict_info = {'nb_duplicated_rows': sum(self.data.duplicated()),
+            self._dict_info = {'nb_duplicated_rows': np.sum(self.data.duplicated()),
                                'many_missing_percentage': manymissing_ph,
                                'manymissing_columns': cserie((nacolcount_p > manymissing_ph)),
                                'low_missing_percentage': manymissing_pl,
@@ -490,7 +547,7 @@ class DataExploration(object):
     def metadata(self):
         """ Return a dict/json full of infos about the dataset """
         meta = {}
-        meta['mem_size'] = self.data.memory_usage(index=True).sum() #in bytes
+        meta['mem_size'] = self.data.memory_usage(index=True).sum()  # in bytes
         meta['columns_name'] = self.data.columns.tolist()
         meta['columns_name_n'] = [e.lower() for e in self.data.columns]
         meta['nb_rows'] = self.data.shape[0]

@@ -17,6 +17,7 @@ import unittest
 # internal helpers
 # from autoc.utils.helpers import clock, create_test_df, removena_numpy, cserie
 from autoc.utils.helpers import *
+from autoc.utils.getdata import get_dataset
 from autoc.explorer import DataExploration
 from autoc.naimputer import NaImputer
 import pandas as pd
@@ -65,6 +66,17 @@ class TestDataExploration(unittest.TestCase):
         self.assertEqual(self._test_dc._ncol, self._test_dc.data.shape[1])
 
     @clock
+    def test_is_numeric(self):
+        self.assertTrue(self._test_dc.is_numeric("num_variable"))
+        self.assertTrue(self._test_dc.is_numeric("many_missing_70"))
+        self.assertFalse(self._test_dc.is_numeric("character_variable"))
+
+    @clock
+    def test_where_numeric(self):
+        self.assertEqual(cserie(self._test_dc.where_numeric().all()), self._test_dc._dfnum)
+
+
+    @clock
     def test_total_missing(self):
         self.assertEqual(self._test_dc.total_missing,
                          self._test_dc.data.isnull().sum().sum())
@@ -97,6 +109,19 @@ class TestDataExploration(unittest.TestCase):
         self.assertIsInstance(manymissing, list)
         self.assertIn('many_missing_70', manymissing)
         self.assertIn('na_col', manymissing)
+
+    @clock
+    def test_nacols_full(self):
+        nacols_full = self._test_dc.nacols_full
+        self.assertIsInstance(nacols_full, list)
+        self.assertIn('na_col',nacols_full )
+
+    @clock
+    def test_narows_full(self):
+        test_df = pd.DataFrame(np.random.randint(0,100,size=(100, 4)), columns=list('ABCD'))
+        test_df.loc[99, :] = np.nan
+        self.assertIn(99, DataExploration(test_df).narows_full)
+        self.assertNotIn(1, test_df)
 
     @clock
     def test_constant_col_capture(self):
@@ -241,14 +266,26 @@ class TestHelper(unittest.TestCase):
         """ creating test data set for the test module """
         cls.data = create_test_df()
 
+    @clock
     def test_random_pmf(self):
         self.assertAlmostEqual(len(random_pmf(10)), 10)
         self.assertAlmostEqual(random_pmf(10).sum(), 1)
-
+    @clock
     def test_simu(self):
         pmf = random_pmf(4)
         samples_unique = simu((np.array(['A', 'B']), np.array([0, 1])), 10)
         self.assertTrue((samples_unique == 'B').all())
+
+
+class TestGetData(unittest.TestCase):
+
+    @clock
+    def test_getdata_titanic(self):
+        """ Test if downloading titanic data is working """
+        titanic = get_dataset('titanic')
+        self.assertIsInstance(titanic, pd.DataFrame)
+        self.assertEqual(titanic.shape[0], 891)
+        self.assertEqual(titanic.shape[1], 15)
 
 
 
