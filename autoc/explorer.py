@@ -33,12 +33,14 @@ class DataExploration(object):
 
         """
 
-    def __init__(self, data):
+    def __init__(self, data, inplace=False):
         """
         Parameters
         ----------
-        data : DataFrame
+        data : pandas.DataFrame
                 the data you want explore
+        inplace: bool
+            True if you want make a copy of DataFrame, default False
 
         Examples
         --------
@@ -48,7 +50,8 @@ class DataExploration(object):
         data_cleaned = explorer.basic_cleaning() to clean your data.
         """
         assert isinstance(data, pd.DataFrame)
-        self.data = data
+        self.is_data_copy = inplace
+        self.data = data if not self.is_data_copy else data.copy()
         # if not self.label:
         # 	print("""the label column is empty the data will be considered
         # 		as a dataset of predictors""")
@@ -78,7 +81,13 @@ class DataExploration(object):
     # 	return self.data[self.label]
 
     def is_numeric(self, colname):
-        """ Returns True if a the type of column is numeric else False
+        """
+        Returns True if a the type of column is numeric else False
+
+        Parameters
+        ----------
+        colname : str
+            the name of the column of the self.data
 
         Notes
         ------
@@ -87,6 +96,25 @@ class DataExploration(object):
         """
         dtype_col = self.data.loc[:, colname].dtype
         return (dtype_col == int) or (dtype_col == float)
+
+    def is_int_factor(self, colname, threshold=0.1):
+        """
+        Returns True if a the type of column is numeric else False
+
+        Parameters
+        ----------
+        colname : str
+            the name of the column of the self.data
+        threshold : float
+            colname is an 'int_factor' if the number of
+            unique values < threshold * nrows
+
+        """
+        dtype_col = self.data.loc[:, colname].dtype
+        if dtype_col == int and self.data.loc[:, colname].nunique() <= (threshold * self.data.shape[0]):
+            return True
+        else:
+            return False
 
     def where_numeric(self):
         """ Returns a Boolean Dataframe with True for numeric values False for other """
