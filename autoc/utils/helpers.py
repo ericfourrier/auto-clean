@@ -13,25 +13,33 @@ import numpy as np
 import functools
 
 
-def get_dataset(name, *args, **kwargs):
-    """Get a dataset from the online repo
-    https://github.com/ericfourrier/autoc-datasets (requires internet).
+def print_section(section_name, width=120):
+    """ print centered section for reports in DataExplora"""
+    section_name = ' ' + section_name + ' '
+    print('{:=^{  }}'.format(section_name, width))
 
-    Parameters
-    ----------
-    name : str
-        Name of the dataset 'name.csv'
-    """
-    path = "https://raw.githubusercontent.com/ericfourrier/autoc-datasets/master/{0}.csv".format(name)
-    return pd.read_csv(path, *args, **kwargs)
+# def get_dataset(name, *args, **kwargs):
+#     """Get a dataset from the online repo
+#     https://github.com/ericfourrier/autoc-datasets (requires internet).
+#
+#     Parameters
+#     ----------
+#     name : str
+#         Name of the dataset 'name.csv'
+#     """
+#     path = "https://raw.githubusercontent.com/ericfourrier/autoc-datasets/master/{0}.csv".format(name)
+#     return pd.read_csv(path, *args, **kwargs)
 
 
 def flatten_list(x):
     return [y for l in x for y in flatten_list(l)] if isinstance(x, list) else [x]
 
 
-def cserie(serie):
-    return serie[serie].index.tolist()
+def cserie(serie, index=False):
+    if index:
+        return serie[serie].index
+    else:
+        return serie[serie].index.tolist()
 
 
 def removena_numpy(array):
@@ -117,8 +125,10 @@ def create_test_df():
     test_df['character_variable_fillna'] = ['A'] * \
         300 + ['B'] * 200 + ['C'] * 200 + [np.nan] * 300
     test_df['numeric_variable_fillna'] = [1] * 400 + [3] * 400 + [np.nan] * 200
-    test_df['num_variable'] = 100
+    test_df['num_variable'] = 100.0
+    test_df['int_factor_10'] = [choice(range(10)) for _ in range(1000)]
     test_df['outlier'] = normal(size=1000)
+    test_df['datetime'] = pd.date_range('1/1/2015', periods=1000, freq='H')
     test_df.loc[[1, 10, 100], 'outlier'] = [10, 5, 10]
     return test_df
 
@@ -133,7 +143,7 @@ def simu(pmf, size):
         a tuple with (labels,probs) labels are supposed to be in ascending order
     size: int
         the number of sampel you want generate
-    Return
+    Returns
     ------
     int (depends of the type of labels)
         draw a random sample from the pmf
