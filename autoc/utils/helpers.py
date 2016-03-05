@@ -129,6 +129,8 @@ def create_test_df():
     test_df['int_factor_10'] = [choice(range(10)) for _ in range(1000)]
     test_df['outlier'] = normal(size=1000)
     test_df['datetime'] = pd.date_range('1/1/2015', periods=1000, freq='H')
+    test_df['None_100'] = [1] * 900 + [None] * 100
+    test_df['None_na_200'] = [1] * 800 + [None] * 100 + [np.nan] * 100
     test_df.loc[[1, 10, 100], 'outlier'] = [10, 5, 10]
     return test_df
 

@@ -95,13 +95,19 @@ class TestDataExploration(unittest.TestCase):
     def test_total_missing(self):
         self.assertEqual(self._test_dc.total_missing,
                          self._test_dc.data.isnull().sum().sum())
+    @clock
+    def test_None_count(self):
+        nacolcount = self._test_dc.nacolcount()
+        self.assertEqual(nacolcount.loc['None_100', 'Napercentage'], 0.1)
+        self.assertEqual(nacolcount.loc['None_100', 'Nanumber'], 100)
+        self.assertEqual(nacolcount.loc['None_na_200', 'Napercentage'], 0.2)
+        self.assertEqual(nacolcount.loc['None_na_200', 'Nanumber'], 200)
 
     @clock
     def test_nacolcount_capture_na(self):
         nacolcount = self._test_dc.nacolcount()
         self.assertEqual(nacolcount.loc['na_col', 'Napercentage'], 1.0)
-        self.assertEqual(
-            nacolcount.loc['many_missing_70', 'Napercentage'], 0.7)
+        self.assertEqual(nacolcount.loc['many_missing_70', 'Napercentage'], 0.7)
 
     @clock
     def test_nacolcount_is_type_dataframe(self):
