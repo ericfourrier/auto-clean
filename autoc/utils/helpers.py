@@ -131,7 +131,7 @@ def create_test_df():
     test_df['datetime'] = pd.date_range('1/1/2015', periods=1000, freq='H')
     test_df['None_100'] = [1] * 900 + [None] * 100
     test_df['None_na_200'] = [1] * 800 + [None] * 100 + [np.nan] * 100
-    test_df.loc[[1, 10, 100], 'outlier'] = [10, 5, 10]
+    test_df.loc[[1, 10, 100], 'outlier'] = [999, 3, 999]
     test_df['character_variable_up1'] = ['A'] * 500 + ['B'] * 200 + ['C'] * 300
     test_df['character_variable_up2'] = ['A'] * 500 + ['B'] * 200 + ['D'] * 300
     test_df['other_na'] = ['Missing'] * 100 + ['missing'] * 100 + ['N/a'] * 100 + \

@@ -45,10 +45,10 @@ class OutliersDetection(DataExploration):
 
     def __init__(self, *args, **kwargs):
         super(OutliersDetection, self).__init__(*args, **kwargs)
-        self.strong_cutoff = {'cutoff_zscore': 6,
-                              'cutoff_iqrscore': 6, 'cutoff_mad': 6}
-        self.basic_cutoff = {'cutoff_zscore': 3,
-                             'cutoff_iqrscore': 2, 'cutoff_mad': 2}
+        self.strong_cutoff = {'cutoff_z': 6,
+                              'cutoff_iqr': 6, 'cutoff_mad': 6}
+        self.basic_cutoff = {'cutoff_z': 3,
+                             'cutoff_iqr': 2, 'cutoff_mad': 2}
 
 
     def check_negative_value(self, colname):
@@ -66,15 +66,19 @@ class OutliersDetection(DataExploration):
         df = pd.DataFrame(dict((key, func(self.data.loc[:, colname]))
                                for key, func in zip(keys, scores)))
         df['is_outlier'] = 0
-        if 'z_score' in keys:
-            df.loc[np.absolute(df['z_score']) >=
-                   cutoff_params["cutoff_zscore"], 'is_outlier'] = 1
-        if 'iqr_score' in keys:
-            df.loc[np.absolute(df['iqr_score']) >=
-                   cutoff_params["cutoff_iqrscore"], 'is_outlier'] = 1
-        if 'mad_score' in keys:
-            df.loc[np.absolute(df['mad_score']) >=
-                   cutoff_params["cutoff_mad"], 'is_outlier'] = 1
+        for s in keys:
+            cutoff_colname = "cutoff_{}".format(s.split('_')[0])
+            index_outliers = np.absolute(df[s]) >= cutoff_params[cutoff_colname]
+            df.loc[index_outliers, 'is_outlier'] = 1
+        # if 'z_score' in keys:
+        #     df.loc[np.absolute(df['z_score']) >=
+        #            cutoff_params["cutoff_z"], 'is_outlier'] = 1
+        # if 'iqr_score' in keys:
+        #     df.loc[np.absolute(df['iqr_score']) >=
+        #            cutoff_params["cutoff_iqr"], 'is_outlier'] = 1
+        # if 'mad_score' in keys:
+        #     df.loc[np.absolute(df['mad_score']) >=
+        #            cutoff_params["cutoff_mad"], 'is_outlier'] = 1
         return df
 
     def check_negative_value(self):
