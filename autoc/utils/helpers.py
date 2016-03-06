@@ -132,6 +132,11 @@ def create_test_df():
     test_df['None_100'] = [1] * 900 + [None] * 100
     test_df['None_na_200'] = [1] * 800 + [None] * 100 + [np.nan] * 100
     test_df.loc[[1, 10, 100], 'outlier'] = [10, 5, 10]
+    test_df['character_variable_up1'] = ['A'] * 500 + ['B'] * 200 + ['C'] * 300
+    test_df['character_variable_up2'] = ['A'] * 500 + ['B'] * 200 + ['D'] * 300
+    test_df['other_na'] = ['Missing'] * 100 + ['missing'] * 100 + ['N/a'] * 100 + \
+    ['NA'] * 100 + ['na'] * 100 + ['n/a'] * 100 + ['Not Available'] * 100 + \
+       ['Unknown'] * 100 + ['do_not_touch'] * 200
     return test_df
 
 
@@ -220,7 +225,8 @@ def simulate_na_col(df, colname, n=None, pct=None, weights=None,
     else:
         if safety:
             tokeep = keep_category(df, colname, *args, **kwargs)
-        col = df.loc[:, colname].drop(tokeep)  # we are not smapling from tokeep
+        # we are not smapling from tokeep
+        col = df.loc[:, colname].drop(tokeep)
         col = col.dropna()
         print(colname)
         col_distribution = col.value_counts(normalize=True, sort=False)

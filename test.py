@@ -43,6 +43,15 @@ class TestDataExploration(unittest.TestCase):
         cls._test_dc = DataExploration(data=cls._test_df)
 
     @clock
+    def test_to_lowercase(self):
+        df_lower = self._test_dc.to_lowercase()
+        self.assertNotEqual(id(df_lower), id(self._test_dc.data))
+        self.assertTrue((pd.Series(['a'] * 500 + ['b'] * 200 + ['c'] * 300)==
+                        df_lower.loc[:, 'character_variable_up1']).all())
+        self.assertTrue((pd.Series(['a'] * 500 + ['b'] * 200 + ['d'] * 300)==
+                        df_lower.loc[:, 'character_variable_up2']).all())
+
+    @clock
     def test_inplace(self):
         exploration_copy = DataExploration(data=create_test_df(), inplace=True)
         self.assertEqual(id(self._test_df), id(self._test_dc.data))
@@ -118,6 +127,11 @@ class TestDataExploration(unittest.TestCase):
     def test_narowcount_capture_na(self):
         narowcount = self._test_dc.narowcount()
         self.assertEqual(sum(narowcount['Nanumber'] > 0), self._test_dc._nrow)
+    # 
+    # @clock
+    # def test_detect_other_na(self):
+    #     other_na = self._test_dc.detect_other_na()
+    #     self.assertIsInstance(narowcount, pd.core.frame.DataFrame)
 
     @clock
     def test_narowcount_is_type_dataframe(self):
