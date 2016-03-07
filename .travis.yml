@@ -17,8 +17,12 @@ before_install:
   - conda update -q conda
   - conda info -a
 
-install: conda install --yes --file requirements.txt
+install:
+- conda install --yes --file requirements.txt
+- pip install coveralls
 script: python -m unittest -v test
+after_success:
+    - if [[ "$COVERAGE" == "true" ]]; then coveralls || echo "failed"; fi
 notifications:
   slack:
     secure: u+aCJgV5PnQZh9Wt19LNP5pQtHDfGd4X182j51K8l51rSRrzsMxEZ3bAeN1ci3Wam7d7y5hiPFmbrZV6AvEKqksXoBO5fCm5R+mY04QPfC2OExJqBPfUbXRSlY2aqUCW4eManoj+F2c+Wx0o+sPaMQRfVr6LosF52gKPh7fafUApQ7Vvf9F8R38vge8X1eI/35ip8QUc8S1k8uudDAewzmOqt+AaETWWFiwmy+hfG1nroTVIJCKq18xHnGuNAx+4/BgL9GyjdMal4G4olVhppu1KZjzqKxHg/nP91oO1VTbOj+7EhxpfNOMKrMwbJcFw6vNdypB+ad8VBMiz6wgSd5a3c6FlfMCpOq7ffbIGo7/0yh6IyrCoIBhY2wGxjnGc36ehl7JKv2vLHteb+vKz9EMsHdj5SRT/SzW1EGwvGJyRFp2yCRKCCXwgsNXMFMcagfXrFB3a0CRsBcB2DACUTc4V+UEXohEPn1dJufrjIw5+3yLbXU8iffMH07jJYydkCiarIf+Iho73rbYacsAl14txuyGtwkQjAxofb0RbAwpsA8Rl/rAk1K1bWDePu5UKDGfRK/iOoJKZzZXbCC6i42d0X2d8i/5WCT9Bcz3VygtlKSU3aW+4qcWEMddE3Yy9ZT0pL2kplwPm94ttavOyGv8+xoovpi0kNzWrO65fT7A=
