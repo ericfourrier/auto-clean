@@ -16,10 +16,11 @@ The clock decorator in utils will measure the run time of the test
 import unittest
 # internal helpers
 # from autoc.utils.helpers import clock, create_test_df, removena_numpy, cserie
-from autoc.utils.helpers import *
+from autoc.utils.helpers import random_pmf, clock, create_test_df, cserie, simu, removena_numpy
 from autoc.utils.getdata import get_dataset
 from autoc.explorer import DataExploration
 from autoc.naimputer import NaImputer
+from autoc.outliersdetection import OutliersDetection
 import pandas as pd
 import numpy as np
 
@@ -39,7 +40,23 @@ class TestDataExploration(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         """ creating test data set for the test module """
-        cls._test_dc = DataExploration(data=create_test_df())
+        cls._test_df = create_test_df()
+        cls._test_dc = DataExploration(data=cls._test_df)
+
+    @clock
+    def test_to_lowercase(self):
+        df_lower = self._test_dc.to_lowercase()
+        self.assertNotEqual(id(df_lower), id(self._test_dc.data))
+        self.assertTrue((pd.Series(['a'] * 500 + ['b'] * 200 + ['c'] * 300)==
+                        df_lower.loc[:, 'character_variable_up1']).all())
+        self.assertTrue((pd.Series(['a'] * 500 + ['b'] * 200 + ['d'] * 300)==
+                        df_lower.loc[:, 'character_variable_up2']).all())
+
+    @clock
+    def test_inplace(self):
+        exploration_copy = DataExploration(data=create_test_df(), inplace=True)
+        self.assertEqual(id(self._test_df), id(self._test_dc.data))
+        self.assertNotEqual(id(self._test_df), id(exploration_copy.data))
 
     @clock
     def test_cserie(self):
@@ -72,6 +89,14 @@ class TestDataExploration(unittest.TestCase):
         self.assertFalse(self._test_dc.is_numeric("character_variable"))
 
     @clock
+    def test_is_int_factor(self):
+        self.assertFalse(self._test_dc.is_int_factor("num_variable"))
+        self.assertTrue(self._test_dc.is_int_factor("int_factor_10", 0.01))
+        self.assertTrue(self._test_dc.is_int_factor("int_factor_10", 0.1))
+        self.assertFalse(self._test_dc.is_int_factor("int_factor_10", 0.005))
+        self.assertFalse(self._test_dc.is_int_factor("character_variable"))
+
+    @clock
     def test_where_numeric(self):
         self.assertEqual(cserie(self._test_dc.where_numeric().all()), self._test_dc._dfnum)
 
@@ -80,13 +105,19 @@ class TestDataExploration(unittest.TestCase):
     def test_total_missing(self):
         self.assertEqual(self._test_dc.total_missing,
                          self._test_dc.data.isnull().sum().sum())
+    @clock
+    def test_None_count(self):
+        nacolcount = self._test_dc.nacolcount()
+        self.assertEqual(nacolcount.loc['None_100', 'Napercentage'], 0.1)
+        self.assertEqual(nacolcount.loc['None_100', 'Nanumber'], 100)
+        self.assertEqual(nacolcount.loc['None_na_200', 'Napercentage'], 0.2)
+        self.assertEqual(nacolcount.loc['None_na_200', 'Nanumber'], 200)
 
     @clock
     def test_nacolcount_capture_na(self):
         nacolcount = self._test_dc.nacolcount()
         self.assertEqual(nacolcount.loc['na_col', 'Napercentage'], 1.0)
-        self.assertEqual(
-            nacolcount.loc['many_missing_70', 'Napercentage'], 0.7)
+        self.assertEqual(nacolcount.loc['many_missing_70', 'Napercentage'], 0.7)
 
     @clock
     def test_nacolcount_is_type_dataframe(self):
@@ -97,6 +128,11 @@ class TestDataExploration(unittest.TestCase):
     def test_narowcount_capture_na(self):
         narowcount = self._test_dc.narowcount()
         self.assertEqual(sum(narowcount['Nanumber'] > 0), self._test_dc._nrow)
+    #
+    # @clock
+    # def test_detect_other_na(self):
+    #     other_na = self._test_dc.detect_other_na()
+    #     self.assertIsInstance(narowcount, pd.core.frame.DataFrame)
 
     @clock
     def test_narowcount_is_type_dataframe(self):
@@ -229,10 +265,8 @@ class TestNaImputer(unittest.TestCase):
 
     @clock
     def test_fillna_serie(self):
-        test_char_variable = self._test_na.fillna_serie(
-            self._test_na.data.character_variable_fillna)
-        test_num_variable = self._test_na.fillna_serie(
-            self._test_na.data.numeric_variable_fillna)
+        test_char_variable = self._test_na.fillna_serie('character_variable_fillna')
+        test_num_variable = self._test_na.fillna_serie('numeric_variable_fillna')
         self.assertTrue(test_char_variable.notnull().any())
         self.assertTrue(test_num_variable.notnull().any())
         self.assertTrue((pd.Series(
@@ -257,6 +291,23 @@ class TestNaImputer(unittest.TestCase):
                          == df_fill_low_na_threshold.numeric_variable_fillna).all())
         self.assertTrue(
             sum(pd.isnull(df_fill_low_na_threshold.many_missing_70)) == 700)
+
+
+class TestOutliersDetection(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """ creating test data set for the test module """
+        cls.data = create_test_df()
+        cls.outlier_d = OutliersDetection(cls.data)
+
+    def test_outlier_detectionserie_1d(self):
+        strong_cutoff = self.outlier_d.strong_cutoff
+        df_outliers = self.outlier_d.outlier_detection_serie_1d('outlier', strong_cutoff)
+        self.assertIn(1, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
+        self.assertNotIn(10, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
+        self.assertIn(100, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
+        self.assertNotIn(2, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
 
 
 class TestHelper(unittest.TestCase):

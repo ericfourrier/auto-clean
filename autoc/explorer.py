@@ -33,12 +33,14 @@ class DataExploration(object):
 
         """
 
-    def __init__(self, data):
+    def __init__(self, data, inplace=False):
         """
         Parameters
         ----------
-        data : DataFrame
+        data : pandas.DataFrame
                 the data you want explore
+        inplace: bool
+            True if you want make a copy of DataFrame, default False
 
         Examples
         --------
@@ -48,7 +50,8 @@ class DataExploration(object):
         data_cleaned = explorer.basic_cleaning() to clean your data.
         """
         assert isinstance(data, pd.DataFrame)
-        self.data = data
+        self.is_data_copy = inplace
+        self.data = data if not self.is_data_copy else data.copy()
         # if not self.label:
         # 	print("""the label column is empty the data will be considered
         # 		as a dataset of predictors""")
@@ -69,6 +72,7 @@ class DataExploration(object):
         self._dict_info = {}
         self._structure = pd.DataFrame()
         self._string_info = ""
+        self._list_other_na = {'unknown', 'na', 'missing', 'n/a','not available'}
 
     # def get_label(self):
     # 	""" return the Serie of label you want predict """
@@ -78,7 +82,13 @@ class DataExploration(object):
     # 	return self.data[self.label]
 
     def is_numeric(self, colname):
-        """ Returns True if a the type of column is numeric else False
+        """
+        Returns True if a the type of column is numeric else False
+
+        Parameters
+        ----------
+        colname : str
+            the name of the column of the self.data
 
         Notes
         ------
@@ -87,6 +97,29 @@ class DataExploration(object):
         """
         dtype_col = self.data.loc[:, colname].dtype
         return (dtype_col == int) or (dtype_col == float)
+
+    def is_int_factor(self, colname, threshold=0.1):
+        """
+        Returns True if a the type of column is numeric else False
+
+        Parameters
+        ----------
+        colname : str
+            the name of the column of the self.data
+        threshold : float
+            colname is an 'int_factor' if the number of
+            unique values < threshold * nrows
+
+        """
+        dtype_col = self.data.loc[:, colname].dtype
+        if dtype_col == int and self.data.loc[:, colname].nunique() <= (threshold * self.data.shape[0]):
+            return True
+        else:
+            return False
+
+    def to_lowercase(self):
+        """ Returns a copy of dataset with data to lower """
+        return self.data.applymap(lambda x: x.lower() if type(x) == str else x)
 
     def where_numeric(self):
         """ Returns a Boolean Dataframe with True for numeric values False for other """
@@ -133,6 +166,36 @@ class DataExploration(object):
         self._narowcount['Napercentage'] = self._narowcount[
             'Nanumber'] / (self._ncol)
         return self._narowcount
+
+    def detect_other_na(self, verbose=True, auto_replace=False):
+        """ Detect missing values encoded by the creator of the dataset
+        like 'Missing', 'N/A' ...
+
+        Parameters
+        ----------
+        verbose : bool
+            True if you want to print some infos
+        auto_replace: bool
+            True if you want replace this value by np.nan, default False
+
+        Returns
+        -------
+        an DataFrame of boolean if not auto_replace else cleaned DataFrame with
+        self._list_other_na replaced by np.nan
+
+        Notes
+        ------
+        * You can use na_values parameter in pandas.read_csv to specify the missing
+        values to convert to nan a priori
+        * Speed can be improved
+        """
+        res = self.to_lowercase().applymap(lambda x: x in self._list_other_na)
+        print("We detected {} other type of missing values".format(res.sum()))
+        if auto_replace:
+            return self.data.replace(list(self._list_other_na), np.nan)
+        else:
+            return res
+
 
     @property
     def nacols_full(self):
