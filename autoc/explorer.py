@@ -13,11 +13,13 @@ The Goal of this module is to rely on a dataframe structure for modelling g
 # Import modules and global helpers
 #########################################################
 
-import pandas as pd
 import numpy as np
 from numpy.random import permutation
-from autoc.utils.helpers import cserie
+import pandas as pd
 from pprint import pprint
+
+from .exceptions import NotNumericColumn
+from .utils.helpers import cserie
 
 
 class DataExploration(object):
@@ -30,8 +32,7 @@ class DataExploration(object):
 
     When you used a method the output will be stored in a instance attribute so you
     don't have to compute the result again.
-
-        """
+    """
 
     def __init__(self, data, inplace=False):
         """
@@ -621,3 +622,34 @@ class DataExploration(object):
         meta['structure'] = structure_data
         meta['numeric_summary'] = self.numeric_summary().to_dict('index')
         return meta
+
+    def sign_summary(self, subset=None):
+        ''' 
+        Returns the number and percentage of positive and negative values in
+        a column, a subset of columns or all numeric columns of the dataframe.
+
+        Parameters
+        ----------
+        subset : label or list
+            Column name or list of column names to check.
+
+        Returns
+        -------
+        summary : pandas.Series or pandas.DataFrame
+            Summary of the signs present in the subset
+        '''
+        if subset:
+            subs = subs if isinstance(subs, list) else [subs]
+            if sum(col not in self._dfnum for col in subs) > 0:
+                raise NotNumericColumn('At least one of the columns you passed ' \
+                        'as argument are not numeric.')
+        else:
+            subs = self._dfnum
+
+        summary = pd.DataFrame(columns=['NumOfNegative', 'PctOfNegative', 
+                'NumOfPositive', 'PctOfPositive'])
+        summary['NumOfPositive'] = self.data[subs].applymap(lambda x: (x >= 0).sum(), axis=1)
+        summary['NumOfNegative'] = self.data[subs].applymap(lambda x: (x <= 0).sum(), axis=1)
+        summary['PctOfPositive'] = summary['NumberOfPositive'] / len(self.data)
+        summary['PctOfNegative'] = summary['NumberOfNegative'] / len(self.data)
+        return summary
