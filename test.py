@@ -301,9 +301,19 @@ class TestOutliersDetection(unittest.TestCase):
         cls.data = create_test_df()
         cls.outlier_d = OutliersDetection(cls.data)
 
-    def test_outlier_detectionserie_1d(self):
+    @clock
+    def test_outlier_detection_serie_1d(self):
         strong_cutoff = self.outlier_d.strong_cutoff
         df_outliers = self.outlier_d.outlier_detection_serie_1d('outlier', strong_cutoff)
+        self.assertIn(1, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
+        self.assertNotIn(10, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
+        self.assertIn(100, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
+        self.assertNotIn(2, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
+
+    @clock
+    def test_outlier_detection_serie_1d_with_na(self):
+        strong_cutoff = self.outlier_d.strong_cutoff
+        df_outliers = self.outlier_d.outlier_detection_serie_1d('outlier_na', strong_cutoff)
         self.assertIn(1, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
         self.assertNotIn(10, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
         self.assertIn(100, cserie(df_outliers.loc[:, 'is_outlier'] == 1))
@@ -328,15 +338,15 @@ class TestHelper(unittest.TestCase):
         self.assertTrue((samples_unique == 'B').all())
 
 
-class TestGetData(unittest.TestCase):
-
-    @clock
-    def test_getdata_titanic(self):
-        """ Test if downloading titanic data is working """
-        titanic = get_dataset('titanic')
-        self.assertIsInstance(titanic, pd.DataFrame)
-        self.assertEqual(titanic.shape[0], 891)
-        self.assertEqual(titanic.shape[1], 15)
+# class TestGetData(unittest.TestCase):
+#
+#     @clock
+#     def test_getdata_titanic(self):
+#         """ Test if downloading titanic data is working """
+#         titanic = get_dataset('titanic')
+#         self.assertIsInstance(titanic, pd.DataFrame)
+#         self.assertEqual(titanic.shape[0], 891)
+#         self.assertEqual(titanic.shape[1], 15)
 
 
 

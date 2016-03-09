@@ -13,19 +13,27 @@ import numpy as np
 from exceptions import NotNumericColumn
 
 
-def iqr(ndarray):
+def iqr(ndarray, dropna=True):
+    if dropna:
+        ndarray = ndarray[~np.isnan(ndarray)]
     return np.percentile(ndarray, 75) - np.percentile(ndarray, 25)
 
 
-def z_score(ndarray):
+def z_score(ndarray, dropna=True):
+    if dropna:
+        ndarray = ndarray[~np.isnan(ndarray)]
     return (ndarray - np.mean(ndarray)) / (np.std(ndarray))
 
 
-def iqr_score(ndarray):
+def iqr_score(ndarray, dropna=True):
+    if dropna:
+        ndarray = ndarray[~np.isnan(ndarray)]
     return (ndarray - np.median(ndarray)) / (iqr(ndarray))
 
 
-def mad_score(ndarray):
+def mad_score(ndarray, dropna=True):
+    if dropna:
+        ndarray = ndarray[~np.isnan(ndarray)]
     return (ndarray - np.median(ndarray)) / (np.median(np.absolute(ndarray - np.median(ndarray))) / 0.6745)
 
 
@@ -40,7 +48,7 @@ class OutliersDetection(DataExploration):
     Examples
     --------
     * od = OutliersDetection(data = your_DataFrame)
-    * cleaner.structure() : global structure of your DataFrame
+    * od.structure() : global structure of your DataFrame
     """
 
     def __init__(self, *args, **kwargs):
@@ -70,15 +78,6 @@ class OutliersDetection(DataExploration):
             cutoff_colname = "cutoff_{}".format(s.split('_')[0])
             index_outliers = np.absolute(df[s]) >= cutoff_params[cutoff_colname]
             df.loc[index_outliers, 'is_outlier'] = 1
-        # if 'z_score' in keys:
-        #     df.loc[np.absolute(df['z_score']) >=
-        #            cutoff_params["cutoff_z"], 'is_outlier'] = 1
-        # if 'iqr_score' in keys:
-        #     df.loc[np.absolute(df['iqr_score']) >=
-        #            cutoff_params["cutoff_iqr"], 'is_outlier'] = 1
-        # if 'mad_score' in keys:
-        #     df.loc[np.absolute(df['mad_score']) >=
-        #            cutoff_params["cutoff_mad"], 'is_outlier'] = 1
         return df
 
     def check_negative_value(self):
@@ -98,9 +97,9 @@ class OutliersDetection(DataExploration):
         df = df.loc[:, numeric_var]  # take only numeric variable
         # if remove_constant_col:
         # df = df.drop(self.constantcol(), axis = 1) # remove constant variable
-        df_outlier = pd.DataFrame()
+        # df_outlier = pd.DataFrame()
         for col in df:
-            df_temp = self.outlier_detection_serie_1d(col, scores, cutoff_params)
+            df_temp = self.outlier_detection_serie_1d(col, cutoff_params, scores)
             df_temp.columns = [col + '_' +
                                col_name for col_name in df_temp.columns]
             #df_outlier = pd.concat([df_outlier, df_temp], axis=1)
