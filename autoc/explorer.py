@@ -524,16 +524,17 @@ class DataExploration(object):
     def get_infos_consistency(self):
         """ Update self._dict_info and returns infos about duplicates rows and cols,
         constant col,narows and cols """
-        infos = {'nb_duplicated_rows': {'value': self.data.duplicated().sum(), 'level': 'ERROR',
+
+        infos = {'duplicated_rows': {'value': cserie(self.data.duplicated(), index=True), 'level': 'ERROR',
                  'action': 'delete','comment': 'You should delete this rows with df.drop_duplicates()'},
                  'dup_columns': {'value': self.findupcol(), 'level': 'ERROR',
-                  'action': 'delete', 'comment': 'You should delete one of the column with df.drop(colname, axis=1)'},
+                  'action': 'delete', 'comment': 'You should delete one of the column with df.drop({}, axis=1)'.format(self.findupcol())},
                   'constant_columns': {'value': self.constantcol(), 'level': 'WARNING',
-                  'action': 'delete', 'comment': 'You should delete one of the column with df.drop(colname, axis=1)'},
+                  'action': 'delete', 'comment': 'You should delete one of the column with df.drop({}, axis=1)'.format(self.constantcol())},
                   'narows_full': {'value': cserie(self.narows_full), 'level': 'ERROR',
                   'action': 'delete','comment': 'You should delete this rows with df.drop_duplicates()'},
                   'nacols_full': {'value': self.nacols_full, 'level': 'ERROR',
-                  'action': 'delete', 'comment': 'You should delete one of the column with df.drop(colname, axis=1)'}
+                  'action': 'delete', 'comment': 'You should delete one of the column with df.drop({}, axis=1)'.format(self.nacols_full)}
                  }
         # update
         self._dict_info.update(infos)
@@ -545,16 +546,28 @@ class DataExploration(object):
         nacolcount_p = self.nacolcount().Napercentage
         infos = {'nb_total_missing': {'value': self.total_missing, 'level': 'INFO', 'action': None},
                  'pct_total_missing': {'value': float(self.total_missing) / self._nrow, 'level': 'INFO', 'action': None},
-                 'many_na_columns': {'value': cserie((nacolcount_p > manymissing_ph)), 'level': 'ERROR', 'action': 'delete or inpute'},
-                 'low_na_columns': {'value': cserie((nacolcount_p > 0) & (nacolcount_p <= manymissing_pl)), 'level': 'WARNING', 'action': 'inpute'},
+                 'many_na_columns': {'value': cserie((nacolcount_p > manymissing_ph)), 'level': 'ERROR', 'action': 'delete or impute'},
+                 'low_na_columns': {'value': cserie((nacolcount_p > 0) & (nacolcount_p <= manymissing_pl)), 'level': 'WARNING', 'action': 'impute'},
                  }
         # update
         self._dict_info.update(infos)
         return infos
 
-    def print_infos(self, infos="consistency"):
+    def print_infos(self, infos="consistency", print_empty=False):
+        """ pprint of get_infos
+
+        Parameters
+        ----------
+        print_empty: bool:
+            False if you don't want print the empty infos (
+            no missing colum for example)"""
+
         if infos == "consistency":
-            pprint(self.get_infos_consistency())
+            dict_infos = self.get_infos_consistency()
+        if not print_empty:
+            dict_infos = {k: v for k, v in dict_infos.items() if len(v['value']) > 0}
+        pprint(dict_infos)
+
 
     def psummary(self, manymissing_ph=0.70, manymissing_pl=0.05, nzv_freq_cut=95 / 5, nzv_unique_cut=10,
                  threshold=100, string_threshold=40, dynamic=False):
