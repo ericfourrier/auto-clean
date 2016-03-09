@@ -72,7 +72,8 @@ class DataExploration(object):
         self._dict_info = {}
         self._structure = pd.DataFrame()
         self._string_info = ""
-        self._list_other_na = {'unknown', 'na', 'missing', 'n/a','not available'}
+        self._list_other_na = {'unknown', 'na',
+                               'missing', 'n/a', 'not available'}
 
     # def get_label(self):
     # 	""" return the Serie of label you want predict """
@@ -190,12 +191,11 @@ class DataExploration(object):
         * Speed can be improved
         """
         res = self.to_lowercase().applymap(lambda x: x in self._list_other_na)
-        print("We detected {} other type of missing values".format(res.sum()))
+        print("We detected {} other type of missing values".format(res.sum().sum()))
         if auto_replace:
-            return self.data.replace(list(self._list_other_na), np.nan)
+            return self.data.where((res == False), np.nan)
         else:
             return res
-
 
     @property
     def nacols_full(self):
@@ -240,9 +240,12 @@ class DataExploration(object):
         else:
             raise ValueError("Axis should be 1 for rows and o for columns")
 
-    def df_len_string(self):
+    def df_len_string(self, drop_num=False):
         """ Return a Series with the max of the length of the string of string-type columns """
-        return self.data.drop(self._dfnum, axis=1).apply(lambda x: np.max(x.str.len()), axis=0)
+        if drop_num:
+            return self.data.drop(self._dfnum, axis=1).apply(lambda x: np.max(x.str.len()), axis=0)
+        else:
+            return self.data.apply(lambda x: np.max(x.str.len()), axis=0)
 
     def detectkey(self, index_format=False, pct=0.15, dropna=False, **kwargs):
         """ identify id or key columns as an index if index_format = True or
@@ -386,16 +389,17 @@ class DataExploration(object):
         constant_columns = (nb_unique_values == 1)
         na_columns = (perc_missing == 1)
         is_key = nb_unique_values == self._nrow
+        string_length = self.df_len_string(drop_num=False)
         # is_key_na = ((nb_unique_values + nb_missing) == self.nrow()) & (~na_columns)
         dict_str = {'dtypes_r': dtypes_r, 'perc_missing': perc_missing,
                     'nb_missing': nb_missing, 'is_key': is_key,
                     'nb_unique_values': nb_unique_values, 'dtypes_p': dtypes,
                     'constant_columns': constant_columns, 'na_columns': na_columns,
-                    'dtype_infer': dtype_infer}
+                    'dtype_infer': dtype_infer, 'string_length': string_length}
         self._structure = pd.concat(dict_str, axis=1)
         self._structure = self._structure.loc[:, ['dtypes_p', 'dtypes_r', 'nb_missing', 'perc_missing',
                                                   'nb_unique_values', 'constant_columns',
-                                                  'na_columns', 'is_key', 'dtype_infer']]
+                                                  'na_columns', 'is_key', 'dtype_infer', 'string_length']]
         return self._structure
 
     def findupcol(self, threshold=100, **kwargs):
@@ -520,11 +524,16 @@ class DataExploration(object):
     def get_infos_consistency(self):
         """ Update self._dict_info and returns infos about duplicates rows and cols,
         constant col,narows and cols """
-        infos = {'nb_duplicated_rows': {'value': self.data.duplicated().sum(), 'level': 'ERROR', 'action': 'delete'},
-                 'dup_columns': {'value': self.findupcol(), 'level': 'ERROR', 'action': 'delete'},
-                 'constant_columns': {'value': self.constantcol(), 'level': 'WARNING', 'action': 'delete'},
-                 'narows_full': {'value': cserie(self.narows_full), 'level': 'ERROR', 'action': 'delete'},
-                 'nacols_full': {'value': self.nacols_full, 'level': 'ERROR', 'action': 'delete'}
+        infos = {'nb_duplicated_rows': {'value': self.data.duplicated().sum(), 'level': 'ERROR',
+                 'action': 'delete','comment': 'You should delete this rows with df.drop_duplicates()'},
+                 'dup_columns': {'value': self.findupcol(), 'level': 'ERROR',
+                  'action': 'delete', 'comment': 'You should delete one of the column with df.drop(colname, axis=1)'},
+                  'constant_columns': {'value': self.constantcol(), 'level': 'WARNING',
+                  'action': 'delete', 'comment': 'You should delete one of the column with df.drop(colname, axis=1)'},
+                  'narows_full': {'value': cserie(self.narows_full), 'level': 'ERROR',
+                  'action': 'delete','comment': 'You should delete this rows with df.drop_duplicates()'},
+                  'nacols_full': {'value': self.nacols_full, 'level': 'ERROR',
+                  'action': 'delete', 'comment': 'You should delete one of the column with df.drop(colname, axis=1)'}
                  }
         # update
         self._dict_info.update(infos)
