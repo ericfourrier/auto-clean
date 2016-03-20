@@ -18,6 +18,7 @@ import numpy as np
 from numpy.random import permutation
 from autoc.utils.helpers import cserie
 from pprint import pprint
+from .exceptions import NotNumericColumn
 
 
 class DataExploration(object):
@@ -138,7 +139,39 @@ class DataExploration(object):
         a = max(int(pct * float(len(self.data.index))), nr)
         if threshold:
             a = min(a, threshold)
-        return self.data.loc[permutation(self.data.index)[:a]]
+        return self.data.loc[permutation(self.data.index)[:a],:]
+
+
+    def sign_summary(self, subset=None):
+        """
+        Returns the number and percentage of positive and negative values in
+        a column, a subset of columns or all numeric columns of the dataframe.
+
+        Parameters
+        ----------
+        subset : label or list
+            Column name or list of column names to check.
+
+        Returns
+        -------
+        summary : pandas.Series or pandas.DataFrame
+            Summary of the signs present in the subset
+        """
+        if subset:
+            subs = subs if isinstance(subs, list) else [subs]
+            if sum(col not in self._dfnum for col in subs) > 0:
+                raise NotNumericColumn('At least one of the columns you passed ' \
+                        'as argument are not numeric.')
+        else:
+            subs = self._dfnum
+
+        summary = pd.DataFrame(columns=['NumOfNegative', 'PctOfNegative',
+                'NumOfPositive', 'PctOfPositive'])
+        summary['NumOfPositive'] = self.data[subs].apply(lambda x: (x >= 0).sum(), axis=0)
+        summary['NumOfNegative'] = self.data[subs].apply(lambda x: (x <= 0).sum(), axis=0)
+        summary['PctOfPositive'] = summary['NumOfPositive'] / len(self.data)
+        summary['PctOfNegative'] = summary['NumOfNegative'] / len(self.data)
+        return summary
 
     @property
     def total_missing(self):
