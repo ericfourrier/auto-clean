@@ -6,8 +6,7 @@ import matplotlib.pyplot as plt
 from autoc.utils.corrplot import plot_corrmatrix
 import numpy as np
 from scipy.stats import ttest_ind
-from scipy.stats import ks_2samp
-
+from scipy.stats.mstats import ks_2samp
 
 def missing_map(df, nmax=100, verbose=True, yticklabels=False, figsize=(15, 11), *args, **kwargs):
     """ Returns missing map plot like in amelia 2 package in R """
@@ -80,7 +79,6 @@ class NaImputer(DataExploration):
             cols_to_keep = self.data.columns
         else:
             cols_to_keep = self.nacols
-        print(cols_to_keep)
         data_isna = self.data.loc[:, cols_to_keep].isnull().astype(int)
         data_isna.columns = ["{}{}".format(prefix, c) for c in cols_to_keep]
         self.data_isna = data_isna
@@ -137,7 +135,7 @@ class NaImputer(DataExploration):
         col_to_compare = [c for c in self._dfnum if c !=
                           colname_na]  # remove colname_na
         for col in col_to_compare:
-            ttest = self.get_isna_ttest_s(colname_na, col)
+            ttest = self.get_isna_ttest_s(colname_na, col, type_test=type_test)
             res.loc[col, 'pvalue'] = ttest[1]
             res.loc[col, 'statistic'] = ttest[0]
             res.loc[col, 'type_test'] = type_test
