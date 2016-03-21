@@ -278,7 +278,7 @@ class DataExploration(object):
         if drop_num:
             return self.data.drop(self._dfnum, axis=1).apply(lambda x: np.max(x.str.len()), axis=0)
         else:
-            return self.data.apply(lambda x: np.max(x.str.len()), axis=0)
+            return self.data.apply(lambda x: np.max(x.str.len()) if x.dtype.kind =='O' else np.nan , axis=0)
 
     def detectkey(self, index_format=False, pct=0.15, dropna=False, **kwargs):
         """ identify id or key columns as an index if index_format = True or
