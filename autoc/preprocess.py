@@ -21,10 +21,16 @@ from exceptions import NumericError
 
 
 
+
 class PreProcessor(DataExploration):
+    subtypes = ['text_raw', 'text_categorical', 'ordinal', 'binary', 'other']
 
     def __init__(self, *args, **kwargs):
         super(PreProcessor, self).__init__(*args, **kwargs)
+        self.long_str_cutoff = 80
+        self.short_str_cutoff = 30
+        self.perc_unique_cutoff = 0.2
+        self.nb_max_levels = 20
 
     def basic_cleaning(self,filter_nacols=True, drop_col=None,
                        filter_constantcol=True, filer_narows=True,
@@ -56,6 +62,32 @@ class PreProcessor(DataExploration):
             return self.data.drop(index_to_remove).drop(col_to_remove, axis=1)
         else:
             return self.data.copy().drop(index_to_remove).drop(col_to_remove, axis=1)
+
+    def _infer_subtype_col(self, colname):
+        """ This fonction tries to infer subtypes in order to preprocess them
+        better for skicit learn. You can find the different subtypes in the class
+        variable subtypes
+
+        To be completed ....
+        """
+        serie_col = self.data.loc[:, colname]
+        if serie_col.nunique() == 2:
+            return 'binary'
+        elif serie_col.dtype.kind == 'O':
+            if serie_col.str.len().mean()  > self.long_str_cutoff and serie_col.nunique()/len(serie_col) > self.perc_unique_cutoff:
+                return "text_long"
+            elif serie_col.str.len().mean()  <= self.short_str_cutoff and serie_col.nunique() <= self.nb_max_levels:
+                return 'text_categorical'
+        elif self.is_numeric(colname):
+            if serie_col.dtype == int and serie_col.nunique() <= self.nb_max_levels:
+                return "ordinal"
+        else :
+            return "other"
+
+    def infer_subtypes(self):
+        """ Apply _infer_subtype_col to the whole DataFrame as a dictionnary  """
+        return {col: self._infer_subtype_col(col) for col in self.data.columns}
+
 
     def infer_categorical_str(self, colname,  nb_max_levels=10, threshold_value=0.01):
         """ Returns True if we detect in the serie a  factor variable
