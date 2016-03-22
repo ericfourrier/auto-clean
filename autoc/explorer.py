@@ -34,24 +34,24 @@ class DataExploration(object):
 
         """
 
-    def __init__(self, data, inplace=False):
+    def __init__(self, data, copy=False):
         """
         Parameters
         ----------
         data : pandas.DataFrame
                 the data you want explore
-        inplace: bool
+        copy: bool
             True if you want make a copy of DataFrame, default False
 
         Examples
         --------
         explorer = DataExploration(data = your_DataFrame)
         explorer.structure() : global structure of your DataFrame
-        explorer.psummary() to get the a global snapchat of the different stuff detected
+        explorer.psummary() to get the a global snapchot of the different stuff detected
         data_cleaned = explorer.basic_cleaning() to clean your data.
         """
         assert isinstance(data, pd.DataFrame)
-        self.is_data_copy = inplace
+        self.is_data_copy = copy
         self.data = data if not self.is_data_copy else data.copy()
         # if not self.label:
         # 	print("""the label column is empty the data will be considered
