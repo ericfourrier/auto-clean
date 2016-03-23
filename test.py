@@ -53,8 +53,8 @@ class TestDataExploration(unittest.TestCase):
                         df_lower.loc[:, 'character_variable_up2']).all())
 
     @clock
-    def test_inplace(self):
-        exploration_copy = DataExploration(data=create_test_df(), inplace=True)
+    def test_copy(self):
+        exploration_copy = DataExploration(data=create_test_df(), copy=True)
         self.assertEqual(id(self._test_df), id(self._test_dc.data))
         self.assertNotEqual(id(self._test_df), id(exploration_copy.data))
 
