@@ -34,7 +34,7 @@ class PreProcessor(DataExploration):
 
     def basic_cleaning(self,filter_nacols=True, drop_col=None,
                        filter_constantcol=True, filer_narows=True,
-                       verbose=True, inplace=False):
+                       verbose=True, filter_rows_duplicates=True, inplace=False):
         """
         Basic cleaning of the data by deleting manymissing columns,
         constantcol, full missing rows,  and drop_col specified by the user.
@@ -42,12 +42,15 @@ class PreProcessor(DataExploration):
 
 
         col_to_remove = []
+        index_to_remove = []
         if filter_nacols:
             col_to_remove += self.nacols_full
         if filter_constantcol:
             col_to_remove += list(self.constantcol())
         if filer_narows:
-            index_to_remove = self.narows_full
+            index_to_remove += cserie(self.narows_full)
+        if filter_rows_duplicates:
+            index_to_remove += cserie(self.data.duplicated())
         if isinstance(drop_col, list):
             col_to_remove += drop_col
         elif isinstance(drop_col, str):
@@ -55,9 +58,10 @@ class PreProcessor(DataExploration):
         else:
             pass
         col_to_remove = list(set(col_to_remove))
+        index_to_remove = list(set(index_to_remove))
         if verbose:
             print("We are removing the folowing columns : {}".format(col_to_remove))
-            print("We are removing the folowing rows : {}".format(cserie(index_to_remove)))
+            print("We are removing the folowing rows : {}".format(index_to_remove))
         if inplace:
             return self.data.drop(index_to_remove).drop(col_to_remove, axis=1)
         else:
@@ -86,7 +90,7 @@ class PreProcessor(DataExploration):
 
     def infer_subtypes(self):
         """ Apply _infer_subtype_col to the whole DataFrame as a dictionnary  """
-        return {col: self._infer_subtype_col(col) for col in self.data.columns}
+        return {col: {'dtype': self.data.loc[:,col].dtype, 'subtype':self._infer_subtype_col(col)} for col in self.data.columns}
 
 
     def infer_categorical_str(self, colname,  nb_max_levels=10, threshold_value=0.01):
