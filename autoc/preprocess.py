@@ -17,7 +17,7 @@ from autoc.explorer import DataExploration, pd
 import numpy as np
 from numpy.random import permutation
 from autoc.utils.helpers import cserie
-from exceptions import NumericError
+from autoc.exceptions import NumericError
 
 
 
